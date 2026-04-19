@@ -12,11 +12,21 @@ const OrderCardScene := preload("res://scenes/OrderCard.tscn")
 @onready var _next_btn: Button = %NextBtn
 @onready var _tutorial: Control = %Tutorial
 @onready var _tutorial_start_btn: Button = %StartBtn
+@onready var _pause_panel: Control = %PausePanel
+@onready var _resume_btn: Button = %ResumeBtn
+@onready var _pause_settings_btn: Button = %PauseSettingsBtn
+@onready var _quit_btn: Button = %QuitBtn
+@onready var _settings_sub_panel: Control = %SettingsSubPanel
+@onready var _pause_volume_slider: HSlider = %VolumeSlider
+@onready var _pause_volume_value: Label = %VolumeValue
+@onready var _pause_fullscreen_check: CheckBox = %FullscreenCheck
+@onready var _close_sub_settings_btn: Button = %CloseSubSettingsBtn
 
 var _top_bar: HBoxContainer
 var _level_title_label: Label
 var _order_strip: HBoxContainer
 var _stats_label: Label
+var _pause_btn: Button
 
 var _screen_area: Control
 var _pages_clip: Control
@@ -42,6 +52,8 @@ var _spawn_timer: float = 0.0
 var _orders_spawned: int = 0
 var _level_active: bool = false
 var _next_level_id: int = 1
+var _prep_time_left: float = 0.0
+var _prep_label: Label
 
 func _ready() -> void:
 	_build_layout()
@@ -50,6 +62,16 @@ func _ready() -> void:
 	_restart_btn.pressed.connect(_on_restart)
 	_next_btn.pressed.connect(_on_next_level)
 	_tutorial_start_btn.pressed.connect(_on_tutorial_dismiss)
+	_resume_btn.pressed.connect(_on_resume)
+	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
+	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
+	_quit_btn.pressed.connect(_on_quit_to_home)
+	_pause_volume_slider.value_changed.connect(_on_pause_volume_changed)
+	_pause_fullscreen_check.toggled.connect(_on_pause_fullscreen_toggled)
+	var bus_db: float = AudioServer.get_bus_volume_db(0)
+	_pause_volume_slider.value = clamp(db_to_linear(bus_db), 0.0, 1.0) * 100.0
+	_on_pause_volume_changed(_pause_volume_slider.value)
+	_pause_fullscreen_check.button_pressed = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	GameManager.level_started.connect(_on_level_started)
 	GameManager.level_completed.connect(_on_level_completed)
 	GameManager.coins_changed.connect(func(_v): _update_stats())
@@ -59,6 +81,7 @@ func _ready() -> void:
 	call_deferred("_start_first_level")
 
 func _start_first_level() -> void:
+	_next_level_id = GameManager.pending_level_id
 	GameManager.start_level(_next_level_id)
 
 func _build_layout() -> void:
@@ -86,6 +109,13 @@ func _build_layout() -> void:
 	_order_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_order_strip.add_theme_constant_override("separation", 8)
 	_top_bar.add_child(_order_strip)
+
+	_pause_btn = Button.new()
+	_pause_btn.text = "⏸"
+	_pause_btn.custom_minimum_size = Vector2(56, 56)
+	_pause_btn.add_theme_font_size_override("font_size", 22)
+	_pause_btn.pressed.connect(_on_pause)
+	_top_bar.add_child(_pause_btn)
 
 	# Screen area (pages)
 	_screen_area = Control.new()
@@ -138,6 +168,12 @@ func _build_layout() -> void:
 	_ready_tray_box.add_theme_constant_override("separation", 6)
 	_bottom_bar.add_child(_ready_tray_box)
 
+	_prep_label = Label.new()
+	_prep_label.visible = false
+	_prep_label.add_theme_font_size_override("font_size", 14)
+	_prep_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
+	info_vb.add_child(_prep_label)
+
 func _on_viewport_resized() -> void:
 	_relayout_pages()
 
@@ -145,6 +181,8 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_level_active = true
 	_orders_spawned = 0
 	_spawn_timer = float(lvl.get("spawn_interval", 6.0)) - float(lvl.get("initial_delay", 1.0))
+	_prep_time_left = float(lvl.get("prep_time", 0.0))
+	_update_prep_overlay()
 	_active_orders.clear()
 	_ready_tray.clear()
 	_level_title_label.text = str(lvl.get("name", "Shift"))
@@ -457,6 +495,10 @@ func _update_stats() -> void:
 func _process(delta: float) -> void:
 	if not _level_active:
 		return
+	if _prep_time_left > 0.0:
+		_prep_time_left = max(0.0, _prep_time_left - delta)
+		_update_prep_overlay()
+		return
 	if _orders_spawned < GameManager.total_orders():
 		_spawn_timer += delta
 		var interval := float(GameManager.current_level.get("spawn_interval", 6.0))
@@ -464,6 +506,14 @@ func _process(delta: float) -> void:
 		if _spawn_timer >= interval and _active_orders.size() < max_active:
 			_spawn_timer = 0.0
 			_spawn_order()
+
+func _update_prep_overlay() -> void:
+	if _prep_time_left <= 0.0:
+		_prep_label.visible = false
+		return
+	_prep_label.visible = true
+	var seconds: int = int(ceil(_prep_time_left))
+	_prep_label.text = "PREP: %ds" % seconds
 
 func _spawn_order() -> void:
 	var pool: Array = GameManager.current_level.get("recipes", [])
@@ -541,6 +591,31 @@ func _on_next_level() -> void:
 
 func _on_tutorial_dismiss() -> void:
 	_tutorial.visible = false
+
+func _on_pause() -> void:
+	_settings_sub_panel.visible = false
+	_pause_panel.visible = true
+	get_tree().paused = true
+
+func _on_resume() -> void:
+	_pause_panel.visible = false
+	_settings_sub_panel.visible = false
+	get_tree().paused = false
+
+func _on_quit_to_home() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/Home.tscn")
+
+func _on_pause_volume_changed(value: float) -> void:
+	var linear: float = value / 100.0
+	AudioServer.set_bus_volume_db(0, linear_to_db(max(linear, 0.0001)))
+	_pause_volume_value.text = "%d%%" % int(round(value))
+
+func _on_pause_fullscreen_toggled(pressed: bool) -> void:
+	if pressed:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 
 func _clear_active_ui() -> void:
 	for c in _active_orders:

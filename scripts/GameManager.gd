@@ -10,6 +10,7 @@ var stars_total: int = 0
 var current_level: Dictionary = {}
 var completed_orders: int = 0
 var failed_orders: int = 0
+var pending_level_id: int = 1
 
 func start_level(level_id: int) -> void:
 	var lvl := DataLoader.get_level(level_id)
