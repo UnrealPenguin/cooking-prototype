@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/OrderCard.gd" id="1"]
+
+[node name="OrderCard" type="PanelContainer"]
+custom_minimum_size = Vector2(220, 180)
+script = ExtResource("1")
+
+[node name="Inner" type="Control" parent="."]
+layout_mode = 2
+
+[node name="BG" type="ColorRect" parent="Inner"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.9, 0.7, 0.2, 1)
+
+[node name="Margin" type="MarginContainer" parent="Inner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VB" type="VBoxContainer" parent="Inner/Margin"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Inner/Margin/VB"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Dish"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+
+[node name="Components" type="Label" parent="Inner/Margin/VB"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = ""
+theme_override_font_sizes/font_size = 11
+
+[node name="Timer" type="ProgressBar" parent="Inner/Margin/VB"]
+unique_name_in_owner = true
+layout_mode = 2
+show_percentage = false

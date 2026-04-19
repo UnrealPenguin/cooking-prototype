@@ -1,0 +1,102 @@
+{
+  "lettuce": {
+    "label": "Lettuce",
+    "color": "#8BC34A",
+    "needs_prep": true,
+    "prep_taps": 5,
+    "prep_verb": "Chop",
+    "prepped_label": "Chopped Lettuce",
+    "needs_cook": false
+  },
+  "tomato": {
+    "label": "Tomato",
+    "color": "#E53935",
+    "needs_prep": true,
+    "prep_taps": 4,
+    "prep_verb": "Slice",
+    "prepped_label": "Sliced Tomato",
+    "needs_cook": false
+  },
+  "scallion": {
+    "label": "Scallion",
+    "color": "#AED581",
+    "needs_prep": true,
+    "prep_taps": 3,
+    "prep_verb": "Chop",
+    "prepped_label": "Chopped Scallion",
+    "needs_cook": false
+  },
+  "peppers": {
+    "label": "Peppers",
+    "color": "#FF7043",
+    "needs_prep": true,
+    "prep_taps": 4,
+    "prep_verb": "Slice",
+    "prepped_label": "Sliced Peppers",
+    "needs_cook": false
+  },
+  "onion_stir": {
+    "label": "Onion",
+    "color": "#FFE0B2",
+    "needs_prep": true,
+    "prep_taps": 5,
+    "prep_verb": "Chop",
+    "prepped_label": "Chopped Onion",
+    "needs_cook": false
+  },
+  "patty": {
+    "label": "Patty",
+    "color": "#6D4C41",
+    "needs_prep": false,
+    "needs_cook": true,
+    "appliance": "grill",
+    "cook_time": 6.0,
+    "done_grace": 3.0,
+    "burn_time": 3.0,
+    "cooked_label": "Grilled Patty"
+  },
+  "bun": {
+    "label": "Bun",
+    "color": "#D7A86E",
+    "needs_prep": false,
+    "needs_cook": true,
+    "appliance": "toaster",
+    "cook_time": 4.0,
+    "done_grace": 3.0,
+    "burn_time": 3.0,
+    "cooked_label": "Toasted Bun"
+  },
+  "steak": {
+    "label": "Steak",
+    "color": "#8D4E2A",
+    "needs_prep": false,
+    "needs_cook": true,
+    "appliance": "grill",
+    "cook_time": 8.0,
+    "done_grace": 3.0,
+    "burn_time": 3.0,
+    "cooked_label": "Grilled Steak"
+  },
+  "onion_sauteed": {
+    "label": "Onion (raw)",
+    "color": "#FFF3B0",
+    "needs_prep": false,
+    "needs_cook": true,
+    "appliance": "stove",
+    "cook_time": 5.0,
+    "done_grace": 3.0,
+    "burn_time": 3.0,
+    "cooked_label": "Sauteed Onion"
+  },
+  "chicken_wok": {
+    "label": "Chicken",
+    "color": "#F5D5A0",
+    "needs_prep": false,
+    "needs_cook": true,
+    "appliance": "wok",
+    "cook_time": 6.0,
+    "done_grace": 3.0,
+    "burn_time": 3.0,
+    "cooked_label": "Wok Chicken"
+  }
+}

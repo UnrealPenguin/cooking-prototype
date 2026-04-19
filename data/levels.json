@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "name": "Shift 1 - First Day",
+    "screen_mode": "single",
+    "prep_ingredients": ["lettuce", "tomato"],
+    "appliances": ["grill", "toaster"],
+    "recipes": ["classic_burger"],
+    "max_simultaneous_orders": 1,
+    "total_orders": 3,
+    "spawn_interval": 6.0,
+    "initial_delay": 1.5
+  },
+  {
+    "id": 2,
+    "name": "Shift 2 - Getting Started",
+    "screen_mode": "single",
+    "prep_ingredients": ["lettuce", "tomato"],
+    "appliances": ["grill", "toaster"],
+    "recipes": ["classic_burger"],
+    "max_simultaneous_orders": 2,
+    "total_orders": 5,
+    "spawn_interval": 5.0,
+    "initial_delay": 1.0
+  },
+  {
+    "id": 3,
+    "name": "Shift 3 - Steady",
+    "screen_mode": "single",
+    "prep_ingredients": ["lettuce", "tomato", "scallion"],
+    "appliances": ["grill", "toaster"],
+    "recipes": ["classic_burger"],
+    "max_simultaneous_orders": 2,
+    "total_orders": 6,
+    "spawn_interval": 5.0,
+    "initial_delay": 1.0
+  },
+  {
+    "id": 4,
+    "name": "Shift 4 - Kitchen Expands!",
+    "screen_mode": "dual",
+    "prep_ingredients": ["lettuce", "tomato", "scallion"],
+    "appliances": ["grill", "toaster", "stove"],
+    "recipes": ["classic_burger", "steak_plate"],
+    "max_simultaneous_orders": 2,
+    "total_orders": 6,
+    "spawn_interval": 6.0,
+    "initial_delay": 1.5,
+    "show_swipe_tutorial": true
+  },
+  {
+    "id": 5,
+    "name": "Shift 5 - Busy",
+    "screen_mode": "dual",
+    "prep_ingredients": ["lettuce", "tomato", "scallion", "peppers", "onion_stir"],
+    "appliances": ["grill", "toaster", "stove", "wok"],
+    "recipes": ["classic_burger", "steak_plate", "stir_fry"],
+    "max_simultaneous_orders": 3,
+    "total_orders": 8,
+    "spawn_interval": 5.0,
+    "initial_delay": 1.0
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "grill": {
+    "label": "Grill",
+    "slots": 2,
+    "color": "#5D4037",
+    "cleaning_time": 2.0
+  },
+  "stove": {
+    "label": "Stove",
+    "slots": 2,
+    "color": "#455A64",
+    "cleaning_time": 2.0
+  },
+  "wok": {
+    "label": "Wok",
+    "slots": 1,
+    "color": "#37474F",
+    "cleaning_time": 2.0
+  },
+  "toaster": {
+    "label": "Toaster",
+    "slots": 2,
+    "color": "#8D6E63",
+    "cleaning_time": 2.0
+  },
+  "oven": {
+    "label": "Oven",
+    "slots": 1,
+    "color": "#3E2723",
+    "cleaning_time": 2.5
+  }
+}

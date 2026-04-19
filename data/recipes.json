@@ -1,0 +1,36 @@
+{
+  "classic_burger": {
+    "label": "Classic Burger",
+    "color": "#FFC107",
+    "components": [
+      {"ingredient": "patty", "state": "cooked"},
+      {"ingredient": "bun", "state": "cooked"},
+      {"ingredient": "lettuce", "state": "prepped"},
+      {"ingredient": "tomato", "state": "prepped"}
+    ],
+    "timer": 60.0,
+    "base_coins": 20
+  },
+  "steak_plate": {
+    "label": "Steak Plate",
+    "color": "#BCAAA4",
+    "components": [
+      {"ingredient": "steak", "state": "cooked"},
+      {"ingredient": "onion_sauteed", "state": "cooked"},
+      {"ingredient": "scallion", "state": "prepped"}
+    ],
+    "timer": 75.0,
+    "base_coins": 30
+  },
+  "stir_fry": {
+    "label": "Stir Fry Bowl",
+    "color": "#FF9800",
+    "components": [
+      {"ingredient": "chicken_wok", "state": "cooked"},
+      {"ingredient": "peppers", "state": "prepped"},
+      {"ingredient": "onion_stir", "state": "prepped"}
+    ],
+    "timer": 70.0,
+    "base_coins": 25
+  }
+}
