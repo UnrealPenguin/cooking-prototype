@@ -2,11 +2,13 @@ extends Node
 
 signal coins_changed(value: int)
 signal stars_changed(value: int)
+signal gems_changed(value: int)
 signal level_started(level_data: Dictionary)
 signal level_completed(summary: Dictionary)
 
 var coins: int = 0
 var stars_total: int = 0
+var gems: int = 0
 var current_level: Dictionary = {}
 var completed_orders: int = 0
 var failed_orders: int = 0
@@ -29,6 +31,10 @@ func add_coins(amount: int) -> void:
 func add_stars(amount: int) -> void:
 	stars_total += amount
 	emit_signal("stars_changed", stars_total)
+
+func add_gems(amount: int) -> void:
+	gems += amount
+	emit_signal("gems_changed", gems)
 
 func record_order_result(success: bool, stars_earned: int, coins_earned: int) -> void:
 	if success:

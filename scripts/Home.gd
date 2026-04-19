@@ -7,12 +7,22 @@ extends Control
 @onready var _volume_slider: HSlider = %VolumeSlider
 @onready var _volume_value: Label = %VolumeValue
 @onready var _fullscreen_check: CheckBox = %FullscreenCheck
+@onready var _coins_label: Label = %CoinsLabel
+@onready var _gems_label: Label = %GemsLabel
+@onready var _clear_save_btn: Button = %ClearSaveBtn
+@onready var _clear_save_confirm: ConfirmationDialog = %ClearSaveConfirm
 
 func _ready() -> void:
 	_settings_btn.pressed.connect(func(): _settings_panel.visible = true)
 	_close_settings_btn.pressed.connect(func(): _settings_panel.visible = false)
 	_volume_slider.value_changed.connect(_on_volume_changed)
 	_fullscreen_check.toggled.connect(_on_fullscreen_toggled)
+	_clear_save_btn.pressed.connect(func(): _clear_save_confirm.popup_centered())
+	_clear_save_confirm.confirmed.connect(_on_clear_save)
+	GameManager.coins_changed.connect(func(v): _coins_label.text = "🪙 %d" % v)
+	GameManager.gems_changed.connect(func(v): _gems_label.text = "💎 %d" % v)
+	_coins_label.text = "🪙 %d" % GameManager.coins
+	_gems_label.text = "💎 %d" % GameManager.gems
 
 	var bus_db: float = AudioServer.get_bus_volume_db(0)
 	_volume_slider.value = clamp(db_to_linear(bus_db), 0.0, 1.0) * 100.0
@@ -52,3 +62,6 @@ func _on_fullscreen_toggled(pressed: bool) -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+
+func _on_clear_save() -> void:
+	SaveManager.reset()

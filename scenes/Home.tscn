@@ -34,6 +34,42 @@ size_flags_horizontal = 3
 text = "Select a Shift"
 theme_override_font_sizes/font_size = 30
 
+[node name="CoinsPanel" type="PanelContainer" parent="TopBar"]
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="TopBar/CoinsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="CoinsLabel" type="Label" parent="TopBar/CoinsPanel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "🪙 0"
+theme_override_font_sizes/font_size = 20
+vertical_alignment = 1
+
+[node name="GemsPanel" type="PanelContainer" parent="TopBar"]
+custom_minimum_size = Vector2(120, 48)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="TopBar/GemsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="GemsLabel" type="Label" parent="TopBar/GemsPanel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "💎 0"
+theme_override_font_sizes/font_size = 20
+vertical_alignment = 1
+
 [node name="SettingsBtn" type="Button" parent="TopBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(140, 48)
@@ -132,6 +168,12 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Fullscreen"
 
+[node name="ClearSaveBtn" type="Button" parent="SettingsPanel/Panel/Margin/VB"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Clear Save"
+
 [node name="Spacer" type="Control" parent="SettingsPanel/Panel/Margin/VB"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -141,3 +183,10 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Close"
+
+[node name="ClearSaveConfirm" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+initial_position = 2
+size = Vector2i(360, 140)
+ok_button_text = "Clear"
+dialog_text = "Erase all progress (coins, gems, stars)? This cannot be undone."

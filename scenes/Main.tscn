@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://d0qke831ygowc"]
 
-[ext_resource type="Script" path="res://scripts/Main.gd" id="1"]
+[ext_resource type="Script" uid="uid://bk8bixm3uq3dk" path="res://scripts/Main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/AssemblyView.tscn" id="2"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=573831803]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="BG" type="ColorRect" parent="."]
+[node name="BG" type="ColorRect" parent="." unique_id=1051998744]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,7 +21,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.12, 0.14, 0.18, 1)
 
-[node name="Root" type="VBoxContainer" parent="."]
+[node name="Root" type="VBoxContainer" parent="." unique_id=1869934496]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -31,10 +31,10 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 4
 
-[node name="AssemblyView" parent="." instance=ExtResource("2")]
+[node name="AssemblyView" parent="." unique_id=1947692124 instance=ExtResource("2")]
 layout_mode = 1
 
-[node name="LevelComplete" type="Control" parent="."]
+[node name="LevelComplete" type="Control" parent="." unique_id=1234775661]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -44,14 +44,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="LevelComplete"]
+[node name="Dim" type="ColorRect" parent="LevelComplete" unique_id=32892351]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
-[node name="Panel" type="PanelContainer" parent="LevelComplete"]
+[node name="Panel" type="PanelContainer" parent="LevelComplete" unique_id=1643897456]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -62,58 +64,63 @@ offset_left = -220.0
 offset_top = -140.0
 offset_right = 220.0
 offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="LevelComplete/Panel"]
+[node name="Margin" type="MarginContainer" parent="LevelComplete/Panel" unique_id=2118211835]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="VB" type="VBoxContainer" parent="LevelComplete/Panel/Margin"]
+[node name="VB" type="VBoxContainer" parent="LevelComplete/Panel/Margin" unique_id=844456174]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="LevelComplete/Panel/Margin/VB"]
+[node name="Title" type="Label" parent="LevelComplete/Panel/Margin/VB" unique_id=1437933276]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 26
 text = "Shift Complete!"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 26
 
-[node name="Summary" type="Label" parent="LevelComplete/Panel/Margin/VB"]
+[node name="Summary" type="Label" parent="LevelComplete/Panel/Margin/VB" unique_id=1395199874]
 unique_name_in_owner = true
 layout_mode = 2
-text = ""
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
 
-[node name="RestartBtn" type="Button" parent="LevelComplete/Panel/Margin/VB"]
+[node name="RestartBtn" type="Button" parent="LevelComplete/Panel/Margin/VB" unique_id=995782366]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Play Again"
 
-[node name="NextBtn" type="Button" parent="LevelComplete/Panel/Margin/VB"]
+[node name="NextBtn" type="Button" parent="LevelComplete/Panel/Margin/VB" unique_id=985887037]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Next Shift"
 
-[node name="Tutorial" type="Control" parent="."]
+[node name="Tutorial" type="Control" parent="." unique_id=599686146]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="Tutorial"]
+[node name="Dim" type="ColorRect" parent="Tutorial" unique_id=2081036468]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
-[node name="Panel" type="PanelContainer" parent="Tutorial"]
+[node name="Panel" type="PanelContainer" parent="Tutorial" unique_id=1007422669]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -124,36 +131,40 @@ offset_left = -260.0
 offset_top = -110.0
 offset_right = 260.0
 offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="Tutorial/Panel"]
+[node name="Margin" type="MarginContainer" parent="Tutorial/Panel" unique_id=243667128]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VB" type="VBoxContainer" parent="Tutorial/Panel/Margin"]
+[node name="VB" type="VBoxContainer" parent="Tutorial/Panel/Margin" unique_id=1128148397]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="Tutorial/Panel/Margin/VB"]
+[node name="Title" type="Label" parent="Tutorial/Panel/Margin/VB" unique_id=788941664]
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Kitchen Expanded!"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 24
 
-[node name="Body" type="Label" parent="Tutorial/Panel/Margin/VB"]
+[node name="Body" type="Label" parent="Tutorial/Panel/Margin/VB" unique_id=1464522403]
 layout_mode = 2
-text = "Swipe left and right to move between the Prep Station and the Cooking Station.\n\n← Prep    |    Cook →"
+text = "Swipe left and right to move between the Prep Station and the Cooking Station.
+
+← Prep    |    Cook →"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="StartBtn" type="Button" parent="Tutorial/Panel/Margin/VB"]
+[node name="StartBtn" type="Button" parent="Tutorial/Panel/Margin/VB" unique_id=1989987837]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Got it!"
 
-[node name="PausePanel" type="Control" parent="."]
+[node name="PausePanel" type="Control" parent="." unique_id=440285646]
 unique_name_in_owner = true
 process_mode = 3
 visible = false
@@ -161,15 +172,19 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="PausePanel"]
+[node name="Dim" type="ColorRect" parent="PausePanel" unique_id=1123996675]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
-[node name="Panel" type="PanelContainer" parent="PausePanel"]
+[node name="Panel" type="PanelContainer" parent="PausePanel" unique_id=461321414]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -180,58 +195,64 @@ offset_left = -220.0
 offset_top = -170.0
 offset_right = 220.0
 offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="PausePanel/Panel"]
+[node name="Margin" type="MarginContainer" parent="PausePanel/Panel" unique_id=721773734]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="VB" type="VBoxContainer" parent="PausePanel/Panel/Margin"]
+[node name="VB" type="VBoxContainer" parent="PausePanel/Panel/Margin" unique_id=1076688845]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="PausePanel/Panel/Margin/VB"]
+[node name="Title" type="Label" parent="PausePanel/Panel/Margin/VB" unique_id=1591501047]
 layout_mode = 2
+theme_override_font_sizes/font_size = 26
 text = "Paused"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 26
 
-[node name="ResumeBtn" type="Button" parent="PausePanel/Panel/Margin/VB"]
+[node name="ResumeBtn" type="Button" parent="PausePanel/Panel/Margin/VB" unique_id=1314577081]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Resume"
 
-[node name="PauseSettingsBtn" type="Button" parent="PausePanel/Panel/Margin/VB"]
+[node name="PauseSettingsBtn" type="Button" parent="PausePanel/Panel/Margin/VB" unique_id=1443634315]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Settings"
 
-[node name="QuitBtn" type="Button" parent="PausePanel/Panel/Margin/VB"]
+[node name="QuitBtn" type="Button" parent="PausePanel/Panel/Margin/VB" unique_id=218463319]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Quit to Home"
 
-[node name="SettingsSubPanel" type="Control" parent="PausePanel"]
+[node name="SettingsSubPanel" type="Control" parent="PausePanel" unique_id=2067062387]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Dim" type="ColorRect" parent="PausePanel/SettingsSubPanel"]
+[node name="Dim" type="ColorRect" parent="PausePanel/SettingsSubPanel" unique_id=894602960]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.6)
 
-[node name="Panel" type="PanelContainer" parent="PausePanel/SettingsSubPanel"]
+[node name="Panel" type="PanelContainer" parent="PausePanel/SettingsSubPanel" unique_id=453516652]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -242,59 +263,58 @@ offset_left = -240.0
 offset_top = -150.0
 offset_right = 240.0
 offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="PausePanel/SettingsSubPanel/Panel"]
+[node name="Margin" type="MarginContainer" parent="PausePanel/SettingsSubPanel/Panel" unique_id=894296960]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="VB" type="VBoxContainer" parent="PausePanel/SettingsSubPanel/Panel/Margin"]
+[node name="VB" type="VBoxContainer" parent="PausePanel/SettingsSubPanel/Panel/Margin" unique_id=1568838787]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB"]
+[node name="Title" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB" unique_id=984804525]
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Settings"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 24
 
-[node name="VolumeRow" type="HBoxContainer" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB"]
+[node name="VolumeRow" type="HBoxContainer" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB" unique_id=283291478]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="VolumeLabel" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow"]
+[node name="VolumeLabel" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow" unique_id=801895228]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 text = "Master Volume"
 
-[node name="VolumeSlider" type="HSlider" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow"]
+[node name="VolumeSlider" type="HSlider" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow" unique_id=1411703924]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
-max_value = 100.0
-step = 1.0
 value = 80.0
 
-[node name="VolumeValue" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow"]
+[node name="VolumeValue" type="Label" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB/VolumeRow" unique_id=1613544399]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "80%"
 horizontal_alignment = 2
 
-[node name="FullscreenCheck" type="CheckBox" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB"]
+[node name="FullscreenCheck" type="CheckBox" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB" unique_id=2101254414]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Fullscreen"
 
-[node name="Spacer" type="Control" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB"]
+[node name="Spacer" type="Control" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB" unique_id=1835070902]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CloseSubSettingsBtn" type="Button" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB"]
+[node name="CloseSubSettingsBtn" type="Button" parent="PausePanel/SettingsSubPanel/Panel/Margin/VB" unique_id=816287591]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
