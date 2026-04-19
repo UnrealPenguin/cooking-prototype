@@ -1,3 +1,52 @@
-# Godot 4+ specific ignores
+# Godot
 .godot/
-/android/
+*.translation
+
+# Godot exports
+export_presets.cfg
+
+# Imported resources
+.import/
+
+# iOS build
+*.ipa
+ios_xcode/
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Provisioning profiles
+*.mobileprovision
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Mono (if using C#)
+.mono/
+data_*/
+mono_crash.*.json
+
+/android
