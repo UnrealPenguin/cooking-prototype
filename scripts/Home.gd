@@ -36,12 +36,23 @@ func _build_levels() -> void:
 		child.queue_free()
 	for lvl in DataLoader.levels:
 		var id: int = int(lvl.get("id", 1))
+		var best: int = GameManager.get_best_stars(id)
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(200, 110)
-		btn.text = "%s\n\n%s" % [str(lvl.get("name", "Shift %d" % id)), _level_blurb(lvl)]
+		btn.text = "%s\n%s\n%s" % [
+			str(lvl.get("name", "Shift %d" % id)),
+			_star_row(best),
+			_level_blurb(lvl)
+		]
 		btn.add_theme_font_size_override("font_size", 16)
 		btn.pressed.connect(func(): _start_level(id))
 		_level_grid.add_child(btn)
+
+func _star_row(filled: int) -> String:
+	var out := ""
+	for i in 3:
+		out += "★" if i < filled else "☆"
+	return out
 
 func _level_blurb(lvl: Dictionary) -> String:
 	var orders: int = int(lvl.get("total_orders", 0))
@@ -65,3 +76,4 @@ func _on_fullscreen_toggled(pressed: bool) -> void:
 
 func _on_clear_save() -> void:
 	SaveManager.reset()
+	_build_levels()

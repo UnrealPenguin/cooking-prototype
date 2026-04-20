@@ -101,6 +101,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Next Shift"
 
+[node name="HomeBtn" type="Button" parent="LevelComplete/Panel/Margin/VB"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back to Home"
+
 [node name="Tutorial" type="Control" parent="." unique_id=599686146]
 unique_name_in_owner = true
 visible = false

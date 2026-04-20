@@ -3,7 +3,7 @@
     "label": "Lettuce",
     "color": "#8BC34A",
     "needs_prep": true,
-    "prep_taps": 5,
+    "prep_taps": 4,
     "prep_verb": "Chop",
     "prepped_label": "Chopped Lettuce",
     "needs_cook": false
@@ -12,7 +12,7 @@
     "label": "Tomato",
     "color": "#E53935",
     "needs_prep": true,
-    "prep_taps": 4,
+    "prep_taps": 3,
     "prep_verb": "Slice",
     "prepped_label": "Sliced Tomato",
     "needs_cook": false

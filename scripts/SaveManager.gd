@@ -3,12 +3,12 @@ extends Node
 const SAVE_PATH := "user://save.json"
 
 func _ready() -> void:
-	_load()
-	GameManager.coins_changed.connect(func(_v): _save())
-	GameManager.stars_changed.connect(func(_v): _save())
-	GameManager.gems_changed.connect(func(_v): _save())
+	load_game()
+	GameManager.coins_changed.connect(func(_v): save_game())
+	GameManager.gems_changed.connect(func(_v): save_game())
+	GameManager.level_stars_updated.connect(func(_id, _s): save_game())
 
-func _load() -> void:
+func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
@@ -23,14 +23,16 @@ func _load() -> void:
 		return
 	var data: Dictionary = parsed
 	GameManager.coins = int(data.get("coins", 0))
-	GameManager.stars_total = int(data.get("stars_total", 0))
 	GameManager.gems = int(data.get("gems", 0))
+	var stars_raw: Variant = data.get("level_best_stars", {})
+	if typeof(stars_raw) == TYPE_DICTIONARY:
+		GameManager.level_best_stars = stars_raw
 
-func _save() -> void:
+func save_game() -> void:
 	var data := {
 		"coins": GameManager.coins,
-		"stars_total": GameManager.stars_total,
 		"gems": GameManager.gems,
+		"level_best_stars": GameManager.level_best_stars,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
@@ -41,6 +43,8 @@ func _save() -> void:
 
 func reset() -> void:
 	GameManager.coins = 0
-	GameManager.stars_total = 0
 	GameManager.gems = 0
-	_save()
+	GameManager.level_best_stars = {}
+	GameManager.emit_signal("coins_changed", 0)
+	GameManager.emit_signal("gems_changed", 0)
+	save_game()

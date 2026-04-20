@@ -10,7 +10,8 @@
     "total_orders": 3,
     "spawn_interval": 6.0,
     "initial_delay": 1.5,
-    "prep_time": 5.0
+    "prep_time": 5.0,
+    "time_target_seconds": 20
   },
   {
     "id": 2,
@@ -23,7 +24,8 @@
     "total_orders": 5,
     "spawn_interval": 5.0,
     "initial_delay": 1.0,
-    "prep_time": 5.0
+    "prep_time": 5.0,
+    "time_target_seconds": 28
   },
   {
     "id": 3,
@@ -36,7 +38,8 @@
     "total_orders": 6,
     "spawn_interval": 5.0,
     "initial_delay": 1.0,
-    "prep_time": 5.0
+    "prep_time": 5.0,
+    "time_target_seconds": 33
   },
   {
     "id": 4,
@@ -50,6 +53,7 @@
     "spawn_interval": 6.0,
     "initial_delay": 1.5,
     "prep_time": 5.0,
+    "time_target_seconds": 40,
     "show_swipe_tutorial": true
   },
   {
@@ -63,6 +67,7 @@
     "total_orders": 8,
     "spawn_interval": 5.0,
     "initial_delay": 1.0,
-    "prep_time": 5.0
+    "prep_time": 5.0,
+    "time_target_seconds": 44
   }
 ]

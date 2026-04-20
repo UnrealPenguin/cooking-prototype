@@ -2,6 +2,7 @@ extends PanelContainer
 class_name CookingSlot
 
 signal cooked(ingredient_id: String)
+signal burnt(ingredient_id: String)
 
 enum State { EMPTY, COOKING, DONE, BURNING, BURNT, CLEANING }
 
@@ -62,6 +63,7 @@ func _process(delta: float) -> void:
 			if _timer >= _burn_time:
 				state = State.BURNT
 				_timer = 0.0
+				emit_signal("burnt", ingredient_id)
 		State.CLEANING:
 			if _timer >= _cleaning_time:
 				state = State.EMPTY

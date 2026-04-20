@@ -2,6 +2,7 @@ extends PanelContainer
 class_name Appliance
 
 signal item_cooked(ingredient_id: String)
+signal item_burnt(ingredient_id: String)
 
 var appliance_id: String = ""
 var appliance_data: Dictionary = {}
@@ -28,6 +29,7 @@ func setup(id: String, data: Dictionary) -> void:
 		var slot: CookingSlot = _cooking_slot_scene.instantiate() as CookingSlot
 		_slots_box.add_child(slot)
 		slot.cooked.connect(_on_slot_cooked)
+		slot.burnt.connect(_on_slot_burnt)
 		_slots.append(slot)
 
 func try_place(id: String, ing: Dictionary) -> bool:
@@ -41,3 +43,6 @@ func try_place(id: String, ing: Dictionary) -> bool:
 
 func _on_slot_cooked(ingredient_id: String) -> void:
 	emit_signal("item_cooked", ingredient_id)
+
+func _on_slot_burnt(ingredient_id: String) -> void:
+	emit_signal("item_burnt", ingredient_id)
