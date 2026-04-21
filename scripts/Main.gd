@@ -33,8 +33,8 @@ var _pause_btn: Button
 
 var _screen_area: Control
 var _pages_holder: Control
-var _swipe_left_hint: Label
-var _swipe_right_hint: Label
+var _swipe_left_hint: Button
+var _swipe_right_hint: Button
 
 var _bottom_bar: HBoxContainer
 var _ready_tray_box: HBoxContainer
@@ -96,7 +96,7 @@ func _start_first_level() -> void:
 func _build_layout() -> void:
 	# Top bar
 	_top_bar = HBoxContainer.new()
-	_top_bar.custom_minimum_size = Vector2(0, 190)
+	_top_bar.custom_minimum_size = Vector2(0, 150)
 	_top_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_top_bar.add_theme_constant_override("separation", 8)
 	_root.add_child(_top_bar)
@@ -139,26 +139,32 @@ func _build_layout() -> void:
 	_pages_holder.mouse_filter = Control.MOUSE_FILTER_PASS
 	_screen_area.add_child(_pages_holder)
 
-	_swipe_left_hint = Label.new()
+	_swipe_left_hint = Button.new()
 	_swipe_left_hint.text = "◀"
+	_swipe_left_hint.flat = true
 	_swipe_left_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_left_hint.modulate = Color(1, 1, 1, 0.35)
+	_swipe_left_hint.modulate = Color(1, 1, 1, 0.6)
 	_swipe_left_hint.anchor_left = 0
 	_swipe_left_hint.anchor_top = 0.5
-	_swipe_left_hint.offset_left = 10
-	_swipe_left_hint.offset_top = -24
-	_swipe_left_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_swipe_left_hint.offset_left = 4
+	_swipe_left_hint.offset_top = -32
+	_swipe_left_hint.offset_right = 60
+	_swipe_left_hint.offset_bottom = 32
+	_swipe_left_hint.pressed.connect(func(): _goto_page(_current_page - 1))
 	_screen_area.add_child(_swipe_left_hint)
 
-	_swipe_right_hint = Label.new()
+	_swipe_right_hint = Button.new()
 	_swipe_right_hint.text = "▶"
+	_swipe_right_hint.flat = true
 	_swipe_right_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_right_hint.modulate = Color(1, 1, 1, 0.35)
+	_swipe_right_hint.modulate = Color(1, 1, 1, 0.6)
 	_swipe_right_hint.anchor_left = 1
 	_swipe_right_hint.anchor_top = 0.5
-	_swipe_right_hint.offset_left = -50
-	_swipe_right_hint.offset_top = -24
-	_swipe_right_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_swipe_right_hint.offset_left = -60
+	_swipe_right_hint.offset_top = -32
+	_swipe_right_hint.offset_right = -4
+	_swipe_right_hint.offset_bottom = 32
+	_swipe_right_hint.pressed.connect(func(): _goto_page(_current_page + 1))
 	_screen_area.add_child(_swipe_right_hint)
 
 	# Bottom ready tray
@@ -405,12 +411,18 @@ func _place_on_appliance(ingredient_id: String) -> void:
 			return
 
 func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
-	var raw_row := HBoxContainer.new()
-	raw_row.add_theme_constant_override("separation", 8)
-	vb.add_child(raw_row)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb.add_child(row)
+
+	var raw_col := VBoxContainer.new()
+	raw_col.add_theme_constant_override("separation", 6)
+	row.add_child(raw_col)
 	var raw_label := Label.new()
-	raw_label.text = "Raw:"
-	raw_row.add_child(raw_label)
+	raw_label.text = "Raw"
+	raw_label.add_theme_font_size_override("font_size", 14)
+	raw_col.add_child(raw_label)
 	for ing_id in lvl.get("prep_ingredients", []):
 		var id: String = str(ing_id)
 		var ing := DataLoader.get_ingredient(id)
@@ -418,48 +430,46 @@ func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 			continue
 		var btn := Button.new()
 		btn.text = str(ing.get("label", id))
-		btn.custom_minimum_size = Vector2(110, 44)
+		btn.custom_minimum_size = Vector2(130, 36)
 		btn.pressed.connect(func(): _on_raw_pressed(id))
-		raw_row.add_child(btn)
+		raw_col.add_child(btn)
 		_raw_buttons[id] = btn
 
-	var board_row := HBoxContainer.new()
-	board_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	vb.add_child(board_row)
 	_cutting_board = CuttingBoardScene.instantiate()
-	board_row.add_child(_cutting_board)
+	row.add_child(_cutting_board)
 	_cutting_board.chopped.connect(_on_chopped)
 	_cutting_board.state_changed.connect(_refresh_prep_ui)
 
-	var cont_row := HBoxContainer.new()
-	cont_row.add_theme_constant_override("separation", 8)
-	vb.add_child(cont_row)
+	var cont_col := VBoxContainer.new()
+	cont_col.add_theme_constant_override("separation", 6)
+	row.add_child(cont_col)
 	var cont_title := Label.new()
-	cont_title.text = "Ready:"
-	cont_row.add_child(cont_title)
+	cont_title.text = "Ready"
+	cont_title.add_theme_font_size_override("font_size", 14)
+	cont_col.add_child(cont_title)
 	for ing_id in lvl.get("prep_ingredients", []):
 		var id: String = str(ing_id)
 		var ing := DataLoader.get_ingredient(id)
 		if ing.is_empty():
 			continue
 		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(140, 52)
+		panel.custom_minimum_size = Vector2(150, 36)
 		var mb := MarginContainer.new()
 		mb.add_theme_constant_override("margin_left", 6)
 		mb.add_theme_constant_override("margin_right", 6)
-		mb.add_theme_constant_override("margin_top", 4)
-		mb.add_theme_constant_override("margin_bottom", 4)
+		mb.add_theme_constant_override("margin_top", 2)
+		mb.add_theme_constant_override("margin_bottom", 2)
 		panel.add_child(mb)
 		var hb := HBoxContainer.new()
 		mb.add_child(hb)
 		var color := ColorRect.new()
 		color.color = DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))).lightened(0.15)
-		color.custom_minimum_size = Vector2(20, 20)
+		color.custom_minimum_size = Vector2(18, 18)
 		hb.add_child(color)
 		var lbl := Label.new()
 		lbl.add_theme_font_size_override("font_size", 13)
 		hb.add_child(lbl)
-		cont_row.add_child(panel)
+		cont_col.add_child(panel)
 		_container_labels[id] = lbl
 
 func _on_raw_pressed(ing_id: String) -> void:
@@ -724,7 +734,7 @@ func _on_resume() -> void:
 
 func _on_quit_to_home() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/Home.tscn")
+	get_tree().change_scene_to_file("res://scenes/Stages.tscn")
 
 func _on_pause_volume_changed(value: float) -> void:
 	var linear: float = value / 100.0
@@ -770,6 +780,11 @@ func _on_screen_input(event: InputEvent) -> void:
 			var max_x: float = 0.0
 			var min_x: float = -(float(_pages.size() - 1) * _screen_area.size.x)
 			_pages_holder.position.x = clamp(new_x, min_x, max_x)
+
+func _goto_page(page_idx: int) -> void:
+	if page_idx < 0 or page_idx >= _pages.size():
+		return
+	_animate_to_page(page_idx)
 
 func _animate_to_page(page_idx: int) -> void:
 	_current_page = page_idx

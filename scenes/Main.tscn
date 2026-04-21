@@ -104,7 +104,7 @@ text = "Next Shift"
 [node name="HomeBtn" type="Button" parent="LevelComplete/Panel/Margin/VB"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Back to Home"
+text = "Back to Shifts"
 
 [node name="Tutorial" type="Control" parent="." unique_id=599686146]
 unique_name_in_owner = true
@@ -236,7 +236,7 @@ text = "Settings"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Quit to Home"
+text = "Quit to Shifts"
 
 [node name="SettingsSubPanel" type="Control" parent="PausePanel" unique_id=2067062387]
 unique_name_in_owner = true
