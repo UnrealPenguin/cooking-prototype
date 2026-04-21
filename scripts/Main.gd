@@ -49,7 +49,7 @@ const SWIPE_THRESHOLD := 80.0
 var _active_orders: Array[OrderCard] = []
 var _ready_tray: Dictionary = {}  # "ing:state" -> int count
 var _appliances_ui: Array[Appliance] = []
-var _cutting_board: CuttingBoard
+var _cutting_board: Node
 var _raw_buttons: Dictionary = {}  # ingredient_id -> Button
 var _container_labels: Dictionary = {}  # ingredient_id -> Label
 
@@ -426,7 +426,7 @@ func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 	var board_row := HBoxContainer.new()
 	board_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vb.add_child(board_row)
-	_cutting_board = CuttingBoardScene.instantiate() as CuttingBoard
+	_cutting_board = CuttingBoardScene.instantiate()
 	board_row.add_child(_cutting_board)
 	_cutting_board.chopped.connect(_on_chopped)
 	_cutting_board.state_changed.connect(_refresh_prep_ui)
@@ -484,7 +484,7 @@ func _container_count(ing_id: String) -> int:
 func _refresh_prep_ui() -> void:
 	if _cutting_board == null:
 		return
-	var board_busy := not _cutting_board.is_empty()
+	var board_busy: bool = not _cutting_board.is_empty()
 	for id in _raw_buttons.keys():
 		var btn: Button = _raw_buttons[id]
 		var full := _container_count(id) >= CONTAINER_CAPACITY
