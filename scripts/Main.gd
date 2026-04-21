@@ -50,8 +50,9 @@ var _active_orders: Array[OrderCard] = []
 var _ready_tray: Dictionary = {}  # "ing:state" -> int count
 var _appliances_ui: Array[Appliance] = []
 var _cutting_board: Node
-var _raw_buttons: Dictionary = {}  # ingredient_id -> Button
+var _raw_buttons: Dictionary = {}  # ingredient_id -> Button (cutting-board raws)
 var _container_labels: Dictionary = {}  # ingredient_id -> Label
+var _cook_raw_buttons: Dictionary = {}  # ingredient_id -> Button (place-on-appliance raws)
 
 var _spawn_timer: float = 0.0
 var _orders_spawned: int = 0
@@ -213,6 +214,7 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_cutting_board = null
 	_raw_buttons.clear()
 	_container_labels.clear()
+	_cook_raw_buttons.clear()
 	_current_page = 0
 	_update_stats()
 
@@ -300,20 +302,7 @@ func _build_cook_page(lvl: Dictionary) -> Control:
 	vb.add_child(title)
 
 	var appliance_ids: Array = lvl.get("appliances", [])
-	var place_box := HBoxContainer.new()
-	place_box.add_theme_constant_override("separation", 8)
-	vb.add_child(place_box)
-	var place_label := Label.new()
-	place_label.text = "Place raw:"
-	place_box.add_child(place_label)
-	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
-	for id in cookable_ids:
-		var ing := DataLoader.get_ingredient(id)
-		var btn := Button.new()
-		btn.text = str(ing.get("label", id))
-		btn.custom_minimum_size = Vector2(110, 44)
-		btn.pressed.connect(func(): _place_on_appliance(id))
-		place_box.add_child(btn)
+	_build_cook_raw_row(vb, appliance_ids)
 
 	var appliances_box := HBoxContainer.new()
 	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -363,20 +352,7 @@ func _build_combined_page(lvl: Dictionary) -> Control:
 	vb.add_child(cook_title)
 
 	var appliance_ids: Array = lvl.get("appliances", [])
-	var place_box := HBoxContainer.new()
-	place_box.add_theme_constant_override("separation", 8)
-	vb.add_child(place_box)
-	var place_label := Label.new()
-	place_label.text = "Place raw:"
-	place_box.add_child(place_label)
-	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
-	for id in cookable_ids:
-		var ing := DataLoader.get_ingredient(id)
-		var btn := Button.new()
-		btn.text = str(ing.get("label", id))
-		btn.custom_minimum_size = Vector2(110, 44)
-		btn.pressed.connect(func(): _place_on_appliance(id))
-		place_box.add_child(btn)
+	_build_cook_raw_row(vb, appliance_ids)
 
 	var appliances_box := HBoxContainer.new()
 	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -406,9 +382,34 @@ func _cookable_ingredient_ids_for_appliances(appliance_ids: Array) -> Array:
 
 func _place_on_appliance(ingredient_id: String) -> void:
 	var ing := DataLoader.get_ingredient(ingredient_id)
+	var needs_prep: bool = bool(ing.get("needs_prep", false))
+	if needs_prep and _container_count(ingredient_id) <= 0:
+		return
 	for app in _appliances_ui:
 		if app.try_place(ingredient_id, ing):
+			if needs_prep:
+				_consume_from_tray([{"ingredient": ingredient_id, "state": "prepped"}])
 			return
+
+func _build_cook_raw_row(parent: Control, appliance_ids: Array) -> void:
+	var place_box := HBoxContainer.new()
+	place_box.add_theme_constant_override("separation", 8)
+	parent.add_child(place_box)
+	var place_label := Label.new()
+	place_label.text = "Place raw:"
+	place_box.add_child(place_label)
+	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
+	for id in cookable_ids:
+		var ing := DataLoader.get_ingredient(id)
+		var btn := Button.new()
+		var needs_prep := bool(ing.get("needs_prep", false))
+		var label: String = str(ing.get("prepped_label", ing.get("label", id))) if needs_prep else str(ing.get("label", id))
+		btn.text = label
+		btn.custom_minimum_size = Vector2(130, 44)
+		btn.pressed.connect(func(): _place_on_appliance(id))
+		place_box.add_child(btn)
+		if needs_prep:
+			_cook_raw_buttons[id] = btn
 
 func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 	var row := HBoxContainer.new()
@@ -504,6 +505,9 @@ func _refresh_prep_ui() -> void:
 		var ing := DataLoader.get_ingredient(id)
 		var text: String = str(ing.get("prepped_label", ing.get("label", id)))
 		lbl.text = " %s %d/%d" % [text, _container_count(id), CONTAINER_CAPACITY]
+	for id in _cook_raw_buttons.keys():
+		var btn: Button = _cook_raw_buttons[id]
+		btn.disabled = _container_count(id) <= 0
 
 func _add_to_tray(ingredient_id: String, state: String, amount: int) -> void:
 	var key := "%s:%s" % [ingredient_id, state]

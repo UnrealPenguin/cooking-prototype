@@ -78,9 +78,12 @@
     "cooked_label": "Grilled Steak"
   },
   "onion_sauteed": {
-    "label": "Onion (raw)",
+    "label": "Onion",
     "color": "#FFF3B0",
-    "needs_prep": false,
+    "needs_prep": true,
+    "prep_taps": 4,
+    "prep_verb": "Chop",
+    "prepped_label": "Chopped Onion",
     "needs_cook": true,
     "appliance": "stove",
     "cook_time": 5.0,
