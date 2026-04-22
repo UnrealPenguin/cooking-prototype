@@ -1,0 +1,29 @@
+[
+  {
+    "id": "three_stars_1",
+    "description": "Obtain 3 stars on 1 shift",
+    "type": "stars_on_stages",
+    "stars": 3,
+    "count": 1,
+    "reward_coins": 50,
+    "reward_gems": 0
+  },
+  {
+    "id": "three_stars_3",
+    "description": "Obtain 3 stars on 3 shifts",
+    "type": "stars_on_stages",
+    "stars": 3,
+    "count": 3,
+    "reward_coins": 100,
+    "reward_gems": 1
+  },
+  {
+    "id": "three_stars_5",
+    "description": "Obtain 3 stars on 5 shifts",
+    "type": "stars_on_stages",
+    "stars": 3,
+    "count": 5,
+    "reward_coins": 200,
+    "reward_gems": 2
+  }
+]

@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 DataLoader="*res://scripts/DataLoader.gd"
 GameManager="*res://scripts/GameManager.gd"
+MissionManager="*res://scripts/MissionManager.gd"
 SaveManager="*res://scripts/SaveManager.gd"
 
 [display]

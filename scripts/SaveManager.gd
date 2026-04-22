@@ -7,6 +7,7 @@ func _ready() -> void:
 	GameManager.coins_changed.connect(func(_v): save_game())
 	GameManager.gems_changed.connect(func(_v): save_game())
 	GameManager.level_stars_updated.connect(func(_id, _s): save_game())
+	MissionManager.mission_claimed.connect(func(_id): save_game())
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -27,12 +28,15 @@ func load_game() -> void:
 	var stars_raw: Variant = data.get("level_best_stars", {})
 	if typeof(stars_raw) == TYPE_DICTIONARY:
 		GameManager.level_best_stars = stars_raw
+	MissionManager.current_index = int(data.get("mission_index", 0))
+	MissionManager.emit_signal("mission_progress_changed")
 
 func save_game() -> void:
 	var data := {
 		"coins": GameManager.coins,
 		"gems": GameManager.gems,
 		"level_best_stars": GameManager.level_best_stars,
+		"mission_index": MissionManager.current_index,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
@@ -47,4 +51,5 @@ func reset() -> void:
 	GameManager.level_best_stars = {}
 	GameManager.emit_signal("coins_changed", 0)
 	GameManager.emit_signal("gems_changed", 0)
+	MissionManager.reset()
 	save_game()

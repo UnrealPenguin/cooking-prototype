@@ -1,6 +1,7 @@
 extends Control
 
 @onready var _play_btn: Button = %PlayBtn
+@onready var _missions_btn: Button = %MissionsBtn
 @onready var _settings_btn: Button = %SettingsBtn
 @onready var _quit_btn: Button = %QuitBtn
 @onready var _settings_panel: Control = %SettingsPanel
@@ -15,6 +16,7 @@ extends Control
 
 func _ready() -> void:
 	_play_btn.pressed.connect(_on_play)
+	_missions_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/Missions.tscn"))
 	_settings_btn.pressed.connect(func(): _settings_panel.visible = true)
 	_quit_btn.pressed.connect(func(): get_tree().quit())
 	_close_settings_btn.pressed.connect(func(): _settings_panel.visible = false)
