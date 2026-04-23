@@ -8,6 +8,7 @@ func _ready() -> void:
 	GameManager.gems_changed.connect(func(_v): save_game())
 	GameManager.level_stars_updated.connect(func(_id, _s): save_game())
 	MissionManager.mission_claimed.connect(func(_id): save_game())
+	MissionManager.mission_progress_changed.connect(save_game)
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
@@ -29,6 +30,14 @@ func load_game() -> void:
 	if typeof(stars_raw) == TYPE_DICTIONARY:
 		GameManager.level_best_stars = stars_raw
 	MissionManager.current_index = int(data.get("mission_index", 0))
+	MissionManager.daily_date = str(data.get("daily_date", ""))
+	var daily_raw: Variant = data.get("daily_missions", [])
+	if typeof(daily_raw) == TYPE_ARRAY:
+		MissionManager.daily_missions = daily_raw
+	var stats_raw: Variant = data.get("daily_stats", {})
+	if typeof(stats_raw) == TYPE_DICTIONARY:
+		MissionManager.daily_stats = stats_raw
+	MissionManager.check_daily_reset()
 	MissionManager.emit_signal("mission_progress_changed")
 
 func save_game() -> void:
@@ -37,6 +46,9 @@ func save_game() -> void:
 		"gems": GameManager.gems,
 		"level_best_stars": GameManager.level_best_stars,
 		"mission_index": MissionManager.current_index,
+		"daily_date": MissionManager.daily_date,
+		"daily_missions": MissionManager.daily_missions,
+		"daily_stats": MissionManager.daily_stats,
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:

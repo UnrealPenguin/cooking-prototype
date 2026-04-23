@@ -664,6 +664,7 @@ func _on_serve(card: OrderCard) -> void:
 		_stage_angry = true
 	_stage_coins += coins
 	GameManager.add_coins(coins)
+	MissionManager.track_coins_earned(coins)
 	_update_stats()
 	_consume_from_tray(card.recipe.get("components", []))
 	_active_orders.erase(card)

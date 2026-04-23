@@ -1,0 +1,26 @@
+[
+  {
+    "id": "daily_shifts_2",
+    "description": "Complete 2 shifts today",
+    "type": "shifts_completed_today",
+    "count": 2,
+    "reward_coins": 30,
+    "reward_gems": 0
+  },
+  {
+    "id": "daily_orders_10",
+    "description": "Serve 10 orders today",
+    "type": "orders_served_today",
+    "count": 10,
+    "reward_coins": 40,
+    "reward_gems": 0
+  },
+  {
+    "id": "daily_coins_100",
+    "description": "Earn 100 coins from shifts today",
+    "type": "coins_earned_today",
+    "count": 100,
+    "reward_coins": 0,
+    "reward_gems": 1
+  }
+]
