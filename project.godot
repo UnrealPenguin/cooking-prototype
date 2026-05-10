@@ -22,29 +22,23 @@ GameManager="*res://scripts/GameManager.gd"
 MissionManager="*res://scripts/MissionManager.gd"
 SaveManager="*res://scripts/SaveManager.gd"
 
+[debug]
+
+gdscript/warnings/inference_on_variant=1
+gdscript/warnings/treat_warnings_as_errors=false
+
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/resizable=true
 window/size/mode=2
-window/handheld/orientation="landscape"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation="landscape"
 
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true
-pointing/emulate_mouse_from_touch=true
-
-[debug]
-
-gdscript/warnings/treat_warnings_as_errors=false
-gdscript/warnings/inference_on_variant=1
-gdscript/warnings/unsafe_property_access=0
-gdscript/warnings/unsafe_method_access=0
-gdscript/warnings/unsafe_call_argument=0
-gdscript/warnings/unsafe_cast=0
 
 [physics]
 
