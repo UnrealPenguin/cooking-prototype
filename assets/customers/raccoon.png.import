@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dueud0g1e41wr"
-path="res://.godot/imported/cooked_patty.png-076437df934bc6b8d633b99f867636c2.ctex"
+uid="uid://cawt12u0pb4uy"
+path="res://.godot/imported/raccoon.png-3bbbe252733611e4fceb65a03dd2c1c2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/cooked_patty.png"
-dest_files=["res://.godot/imported/cooked_patty.png-076437df934bc6b8d633b99f867636c2.ctex"]
+source_file="res://assets/customers/raccoon.png"
+dest_files=["res://.godot/imported/raccoon.png-3bbbe252733611e4fceb65a03dd2c1c2.ctex"]
 
 [params]
 

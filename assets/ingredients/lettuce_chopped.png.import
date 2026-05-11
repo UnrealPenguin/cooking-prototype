@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cw8pid3l4vmhv"
-path="res://.godot/imported/lettuce.png-bae35836f9adc51521427857422e9941.ctex"
+uid="uid://d3cg7upng7i3p"
+path="res://.godot/imported/lettuce_chopped.png-6533f80d70de77e0b7d21c7082842fcb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/lettuce.png"
-dest_files=["res://.godot/imported/lettuce.png-bae35836f9adc51521427857422e9941.ctex"]
+source_file="res://assets/ingredients/lettuce_chopped.png"
+dest_files=["res://.godot/imported/lettuce_chopped.png-6533f80d70de77e0b7d21c7082842fcb.ctex"]
 
 [params]
 

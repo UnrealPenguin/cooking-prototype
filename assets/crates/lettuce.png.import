@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bnog875oa0qhx"
-path="res://.godot/imported/customer_3.png-15bee9cf44ef654882bceb6f54e9c6f6.ctex"
+uid="uid://dfanh1c7kylrs"
+path="res://.godot/imported/lettuce.png-d7ab7da9148be33811e5b446b4667550.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/customers/customer_3.png"
-dest_files=["res://.godot/imported/customer_3.png-15bee9cf44ef654882bceb6f54e9c6f6.ctex"]
+source_file="res://assets/crates/lettuce.png"
+dest_files=["res://.godot/imported/lettuce.png-d7ab7da9148be33811e5b446b4667550.ctex"]
 
 [params]
 

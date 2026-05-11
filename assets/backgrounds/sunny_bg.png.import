@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://3lomtf56xyde"
-path="res://.godot/imported/leaks.png-1f93ca6171870a787cf1ff787520816f.ctex"
+uid="uid://05gvj2vd5h2b"
+path="res://.godot/imported/sunny_bg.png-f31fd2edbf9d0ae6b2310b098c1571b8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/leaks.png"
-dest_files=["res://.godot/imported/leaks.png-1f93ca6171870a787cf1ff787520816f.ctex"]
+source_file="res://assets/backgrounds/sunny_bg.png"
+dest_files=["res://.godot/imported/sunny_bg.png-f31fd2edbf9d0ae6b2310b098c1571b8.ctex"]
 
 [params]
 

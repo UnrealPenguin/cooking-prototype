@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://xwfvlwem78nj"
-path="res://.godot/imported/cut_lettuce.png-4ffb6d2e5250fb0779ad8980c9bf033e.ctex"
+uid="uid://dr5felkkkmfqd"
+path="res://.godot/imported/kitchen_main.png-f8a54188cb7d50f586ccc716550056a6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/cut_lettuce.png"
-dest_files=["res://.godot/imported/cut_lettuce.png-4ffb6d2e5250fb0779ad8980c9bf033e.ctex"]
+source_file="res://assets/backgrounds/kitchen_main.png"
+dest_files=["res://.godot/imported/kitchen_main.png-f8a54188cb7d50f586ccc716550056a6.ctex"]
 
 [params]
 

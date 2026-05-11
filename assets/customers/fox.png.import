@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cai0ran6ne7es"
-path="res://.godot/imported/sunny_bg.png-c72a5b3130132ec4d7d1b551780a2bc5.ctex"
+uid="uid://btbpe76yt1eqo"
+path="res://.godot/imported/fox.png-1a467ac8ab6fb6a9ee85b2ed5cd69025.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/bg/sunny_bg.png"
-dest_files=["res://.godot/imported/sunny_bg.png-c72a5b3130132ec4d7d1b551780a2bc5.ctex"]
+source_file="res://assets/customers/fox.png"
+dest_files=["res://.godot/imported/fox.png-1a467ac8ab6fb6a9ee85b2ed5cd69025.ctex"]
 
 [params]
 

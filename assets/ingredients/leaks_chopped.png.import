@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ceeyyikmhiqea"
-path="res://.godot/imported/cut_onions.png-eaafbb244a8c027cd9ab867212e2d6a3.ctex"
+uid="uid://detygmyg8vyqw"
+path="res://.godot/imported/leaks_chopped.png-23764263118fc743505e8cb1c383f4b8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/cut_onions.png"
-dest_files=["res://.godot/imported/cut_onions.png-eaafbb244a8c027cd9ab867212e2d6a3.ctex"]
+source_file="res://assets/ingredients/leaks_chopped.png"
+dest_files=["res://.godot/imported/leaks_chopped.png-23764263118fc743505e8cb1c383f4b8.ctex"]
 
 [params]
 

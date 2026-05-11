@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dhxy4tsiphswc"
-path="res://.godot/imported/raw_patty.png-db41a9fd6f61a82c3cfd50f6ea805c38.ctex"
+uid="uid://cs5v3nvhh7sww"
+path="res://.godot/imported/steak_cooked.png-9164690121523b33fb9c1e15c7631fc8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/raw_patty.png"
-dest_files=["res://.godot/imported/raw_patty.png-db41a9fd6f61a82c3cfd50f6ea805c38.ctex"]
+source_file="res://assets/ingredients/steak_cooked.png"
+dest_files=["res://.godot/imported/steak_cooked.png-9164690121523b33fb9c1e15c7631fc8.ctex"]
 
 [params]
 

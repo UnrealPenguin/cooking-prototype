@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://xt8gy6gc2pa1"
-path="res://.godot/imported/raw_beef.png-3da97694d81825a15f1f439f0512b2aa.ctex"
+uid="uid://bgkcug1kucoiv"
+path="res://.godot/imported/onions_chopped.png-c037a3e8873c233ad4cdc6237730b8f2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/raw_beef.png"
-dest_files=["res://.godot/imported/raw_beef.png-3da97694d81825a15f1f439f0512b2aa.ctex"]
+source_file="res://assets/ingredients/onions_chopped.png"
+dest_files=["res://.godot/imported/onions_chopped.png-c037a3e8873c233ad4cdc6237730b8f2.ctex"]
 
 [params]
 

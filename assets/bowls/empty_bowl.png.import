@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfo7vuj4yts2m"
-path="res://.godot/imported/untoast_bun.png-3727a908917a59ecb4411a130a8ed579.ctex"
+uid="uid://brakg42qjsaji"
+path="res://.godot/imported/empty_bowl.png-baa09158b474275918e19f6003c4509b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/untoast_bun.png"
-dest_files=["res://.godot/imported/untoast_bun.png-3727a908917a59ecb4411a130a8ed579.ctex"]
+source_file="res://assets/bowls/empty_bowl.png"
+dest_files=["res://.godot/imported/empty_bowl.png-baa09158b474275918e19f6003c4509b.ctex"]
 
 [params]
 

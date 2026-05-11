@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://coir4uekxf8h2"
-path="res://.godot/imported/customer_4.png-4f78f0f62932593968cfd437f2223f02.ctex"
+uid="uid://crh4r2srig38d"
+path="res://.godot/imported/onions.png-2b6fa3cdd3b298f285649fbe8a79e314.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/customers/customer_4.png"
-dest_files=["res://.godot/imported/customer_4.png-4f78f0f62932593968cfd437f2223f02.ctex"]
+source_file="res://assets/crates/onions.png"
+dest_files=["res://.godot/imported/onions.png-2b6fa3cdd3b298f285649fbe8a79e314.ctex"]
 
 [params]
 

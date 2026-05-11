@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3ocvqqosq5ln"
-path="res://.godot/imported/customer_1.png-ef756b62cbb2af1655485438c2fdaa7e.ctex"
+uid="uid://6lajhghq63ps"
+path="res://.godot/imported/scallion.png-1685b65f1b8a734ca686374970b9894b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/customers/customer_1.png"
-dest_files=["res://.godot/imported/customer_1.png-ef756b62cbb2af1655485438c2fdaa7e.ctex"]
+source_file="res://assets/crates/scallion.png"
+dest_files=["res://.godot/imported/scallion.png-1685b65f1b8a734ca686374970b9894b.ctex"]
 
 [params]
 

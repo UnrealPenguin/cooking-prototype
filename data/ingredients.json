@@ -20,6 +20,8 @@
   "scallion": {
     "label": "Scallion",
     "color": "#AED581",
+    "icon": "scallion",
+    "chopped_icon": "leaks",
     "needs_prep": true,
     "prep_taps": 3,
     "prep_verb": "Chop",
@@ -38,6 +40,7 @@
   "onion_stir": {
     "label": "Onion",
     "color": "#FFE0B2",
+    "icon": "onions",
     "needs_prep": true,
     "prep_taps": 5,
     "prep_verb": "Chop",
@@ -80,6 +83,7 @@
   "onion_sauteed": {
     "label": "Onion",
     "color": "#FFF3B0",
+    "icon": "onions",
     "needs_prep": true,
     "prep_taps": 4,
     "prep_verb": "Chop",

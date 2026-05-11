@@ -3,11 +3,13 @@ extends Control
 const CuttingBoardScene := preload("res://scenes/CuttingBoard.tscn")
 const ApplianceScene := preload("res://scenes/Appliance.tscn")
 const OrderCardScene := preload("res://scenes/OrderCard.tscn")
+const RawIngredientButtonScene := preload("res://scenes/components/RawIngredientButton.tscn")
+const ReadyBowlScene := preload("res://scenes/components/ReadyBowl.tscn")
 
 const CONTAINER_CAPACITY := 3
 
 @onready var _root: VBoxContainer = %Root
-@onready var _assembly_view: AssemblyView = $AssemblyView
+@onready var _assembly_view: AssemblyView = %AssemblyView
 @onready var _level_complete: Control = %LevelComplete
 @onready var _level_summary: Label = %Summary
 @onready var _restart_btn: Button = %RestartBtn
@@ -51,8 +53,9 @@ var _ready_tray: Dictionary = {}  # "ing:state" -> int count
 var _appliances_ui: Array[Appliance] = []
 var _cutting_board: Node
 var _raw_buttons: Dictionary = {}  # ingredient_id -> Button (cutting-board raws)
-var _container_labels: Dictionary = {}  # ingredient_id -> Label
+var _ready_bowls: Dictionary = {}  # ingredient_id -> ReadyBowl
 var _cook_raw_buttons: Dictionary = {}  # ingredient_id -> Button (place-on-appliance raws)
+const MAX_PREP_SLOTS := 5
 
 var _spawn_timer: float = 0.0
 var _orders_spawned: int = 0
@@ -213,7 +216,7 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_appliances_ui.clear()
 	_cutting_board = null
 	_raw_buttons.clear()
-	_container_labels.clear()
+	_ready_bowls.clear()
 	_cook_raw_buttons.clear()
 	_current_page = 0
 	_update_stats()
@@ -258,11 +261,6 @@ func _update_swipe_hints() -> void:
 func _build_prep_page(lvl: Dictionary) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.15, 0.22, 0.2, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 16)
@@ -282,11 +280,6 @@ func _build_prep_page(lvl: Dictionary) -> Control:
 func _build_cook_page(lvl: Dictionary) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.22, 0.17, 0.15, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 16)
@@ -324,11 +317,6 @@ func _build_cook_page(lvl: Dictionary) -> Control:
 func _build_combined_page(lvl: Dictionary) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.18, 0.20, 0.18, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 16)
@@ -417,23 +405,23 @@ func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vb.add_child(row)
 
-	var raw_col := VBoxContainer.new()
+	var prep_ids: Array = []
+	for ing_id in lvl.get("prep_ingredients", []):
+		if prep_ids.size() >= MAX_PREP_SLOTS:
+			break
+		prep_ids.append(str(ing_id))
+
+	var raw_col := HBoxContainer.new()
 	raw_col.add_theme_constant_override("separation", 6)
 	row.add_child(raw_col)
-	var raw_label := Label.new()
-	raw_label.text = "Raw"
-	raw_label.add_theme_font_size_override("font_size", 14)
-	raw_col.add_child(raw_label)
-	for ing_id in lvl.get("prep_ingredients", []):
-		var id: String = str(ing_id)
+	for id in prep_ids:
 		var ing := DataLoader.get_ingredient(id)
 		if ing.is_empty():
 			continue
-		var btn := Button.new()
-		btn.text = str(ing.get("label", id))
-		btn.custom_minimum_size = Vector2(130, 36)
-		btn.pressed.connect(func(): _on_raw_pressed(id))
+		var btn := RawIngredientButtonScene.instantiate()
 		raw_col.add_child(btn)
+		btn.setup(id, ing)
+		btn.tapped.connect(_on_raw_pressed)
 		_raw_buttons[id] = btn
 
 	_cutting_board = CuttingBoardScene.instantiate()
@@ -441,37 +429,17 @@ func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 	_cutting_board.chopped.connect(_on_chopped)
 	_cutting_board.state_changed.connect(_refresh_prep_ui)
 
-	var cont_col := VBoxContainer.new()
+	var cont_col := HBoxContainer.new()
 	cont_col.add_theme_constant_override("separation", 6)
 	row.add_child(cont_col)
-	var cont_title := Label.new()
-	cont_title.text = "Ready"
-	cont_title.add_theme_font_size_override("font_size", 14)
-	cont_col.add_child(cont_title)
-	for ing_id in lvl.get("prep_ingredients", []):
-		var id: String = str(ing_id)
+	for id in prep_ids:
 		var ing := DataLoader.get_ingredient(id)
 		if ing.is_empty():
 			continue
-		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(150, 36)
-		var mb := MarginContainer.new()
-		mb.add_theme_constant_override("margin_left", 6)
-		mb.add_theme_constant_override("margin_right", 6)
-		mb.add_theme_constant_override("margin_top", 2)
-		mb.add_theme_constant_override("margin_bottom", 2)
-		panel.add_child(mb)
-		var hb := HBoxContainer.new()
-		mb.add_child(hb)
-		var color := ColorRect.new()
-		color.color = DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))).lightened(0.15)
-		color.custom_minimum_size = Vector2(18, 18)
-		hb.add_child(color)
-		var lbl := Label.new()
-		lbl.add_theme_font_size_override("font_size", 13)
-		hb.add_child(lbl)
-		cont_col.add_child(panel)
-		_container_labels[id] = lbl
+		var bowl := ReadyBowlScene.instantiate()
+		cont_col.add_child(bowl)
+		bowl.setup(id, ing, CONTAINER_CAPACITY)
+		_ready_bowls[id] = bowl
 
 func _on_raw_pressed(ing_id: String) -> void:
 	if _cutting_board == null or not _cutting_board.is_empty():
@@ -500,11 +468,9 @@ func _refresh_prep_ui() -> void:
 		var btn: Button = _raw_buttons[id]
 		var full := _container_count(id) >= CONTAINER_CAPACITY
 		btn.disabled = board_busy or full
-	for id in _container_labels.keys():
-		var lbl: Label = _container_labels[id]
-		var ing := DataLoader.get_ingredient(id)
-		var text: String = str(ing.get("prepped_label", ing.get("label", id)))
-		lbl.text = " %s %d/%d" % [text, _container_count(id), CONTAINER_CAPACITY]
+	for id in _ready_bowls.keys():
+		var bowl = _ready_bowls[id]
+		bowl.set_count(_container_count(id))
 	for id in _cook_raw_buttons.keys():
 		var btn: Button = _cook_raw_buttons[id]
 		btn.disabled = _container_count(id) <= 0

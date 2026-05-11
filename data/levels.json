@@ -60,7 +60,7 @@
     "id": 5,
     "name": "Shift 5 - Busy",
     "screen_mode": "dual",
-    "prep_ingredients": ["lettuce", "tomato", "scallion", "peppers", "onion_stir", "onion_sauteed"],
+    "prep_ingredients": ["lettuce", "tomato", "scallion", "onion_stir", "onion_sauteed"],
     "appliances": ["grill", "toaster", "stove", "wok"],
     "recipes": ["classic_burger", "steak_plate", "stir_fry"],
     "max_simultaneous_orders": 3,
