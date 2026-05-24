@@ -5,11 +5,31 @@ const ApplianceScene := preload("res://scenes/Appliance.tscn")
 const OrderCardScene := preload("res://scenes/OrderCard.tscn")
 const RawIngredientButtonScene := preload("res://scenes/components/RawIngredientButton.tscn")
 const ReadyBowlScene := preload("res://scenes/components/ReadyBowl.tscn")
+const CookedItemScene := preload("res://scenes/components/CookedItem.tscn")
+const CustomerScene := preload("res://scenes/components/Customer.tscn")
+
+const CUSTOMER_QUEUE_SLOTS := 3
+const CUSTOMER_OFFSCREEN_MARGIN := 200.0
 
 const CONTAINER_CAPACITY := 3
 
 @onready var _root: VBoxContainer = %Root
 @onready var _assembly_view: AssemblyView = %AssemblyView
+@onready var _crate_slots: Array[Control] = [
+	%CrateSlot1, %CrateSlot2, %CrateSlot3, %CrateSlot4, %CrateSlot5,
+]
+@onready var _bowl_slots: Array[Control] = [
+	%BowlSlot1, %BowlSlot2, %BowlSlot3, %BowlSlot4, %BowlSlot5,
+]
+@onready var _cutting_board_slot: Control = %CuttingBoardSlot
+@onready var _cook_raw_row: BoxContainer = %CookRawRow
+@onready var _appliance_row: BoxContainer = %ApplianceRow
+@onready var _cooked_slots: Array[Control] = [
+	%CookedSlot1, %CookedSlot2, %CookedSlot3,
+]
+@onready var _customers_layer: Control = %CustomersLayer
+@onready var _window_left: Control = %WindowLeft
+@onready var _window_right: Control = %WindowRight
 @onready var _level_complete: Control = %LevelComplete
 @onready var _level_summary: Label = %Summary
 @onready var _restart_btn: Button = %RestartBtn
@@ -26,12 +46,12 @@ const CONTAINER_CAPACITY := 3
 @onready var _pause_volume_value: Label = %VolumeValue
 @onready var _pause_fullscreen_check: CheckBox = %FullscreenCheck
 @onready var _close_sub_settings_btn: Button = %CloseSubSettingsBtn
+@onready var _pause_btn_scene: TextureButton = %PauseBtn
 
 var _top_bar: HBoxContainer
 var _level_title_label: Label
 var _order_strip: HBoxContainer
 var _stats_label: Label
-var _pause_btn: Button
 
 var _screen_area: Control
 var _pages_holder: Control
@@ -55,6 +75,9 @@ var _cutting_board: Node
 var _raw_buttons: Dictionary = {}  # ingredient_id -> Button (cutting-board raws)
 var _ready_bowls: Dictionary = {}  # ingredient_id -> ReadyBowl
 var _cook_raw_buttons: Dictionary = {}  # ingredient_id -> Button (place-on-appliance raws)
+var _cooked_items: Dictionary = {}  # ingredient_id -> CookedItem
+var _customers_by_card: Dictionary = {}  # OrderCard -> Customer
+var _occupied_window_xs: Array[float] = []
 const MAX_PREP_SLOTS := 5
 
 var _spawn_timer: float = 0.0
@@ -78,6 +101,7 @@ func _ready() -> void:
 	_home_btn.pressed.connect(_on_quit_to_home)
 	_tutorial_start_btn.pressed.connect(_on_tutorial_dismiss)
 	_resume_btn.pressed.connect(_on_resume)
+	_pause_btn_scene.pressed.connect(_on_pause)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
 	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
 	_quit_btn.pressed.connect(_on_quit_to_home)
@@ -122,13 +146,6 @@ func _build_layout() -> void:
 	_order_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_order_strip.add_theme_constant_override("separation", 8)
 	_top_bar.add_child(_order_strip)
-
-	_pause_btn = Button.new()
-	_pause_btn.text = "⏸"
-	_pause_btn.custom_minimum_size = Vector2(56, 56)
-	_pause_btn.add_theme_font_size_override("font_size", 22)
-	_pause_btn.pressed.connect(_on_pause)
-	_top_bar.add_child(_pause_btn)
 
 	# Screen area (pages)
 	_screen_area = Control.new()
@@ -208,6 +225,13 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_update_prep_overlay()
 	_active_orders.clear()
 	_ready_tray.clear()
+	_occupied_window_xs.clear()
+	if _customers_layer != null:
+		for child in _customers_layer.get_children():
+			if child == _window_left or child == _window_right:
+				continue
+			child.queue_free()
+	_customers_by_card.clear()
 	_level_title_label.text = str(lvl.get("name", "Shift"))
 	_clear_children(_order_strip)
 	_clear_children(_pages_holder)
@@ -218,6 +242,7 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_raw_buttons.clear()
 	_ready_bowls.clear()
 	_cook_raw_buttons.clear()
+	_cooked_items.clear()
 	_current_page = 0
 	_update_stats()
 
@@ -234,6 +259,7 @@ func _on_level_started(lvl: Dictionary) -> void:
 		_pages.append(prep_page)
 		_pages.append(cook_page)
 
+	_build_cook_section(lvl)
 	_refresh_ready_tray_ui()
 	_refresh_prep_ui()
 	call_deferred("_relayout_pages")
@@ -277,87 +303,15 @@ func _build_prep_page(lvl: Dictionary) -> Control:
 	_build_prep_section(vb, lvl)
 	return root
 
-func _build_cook_page(lvl: Dictionary) -> Control:
+func _build_cook_page(_lvl: Dictionary) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	margin.add_child(vb)
-	var title := Label.new()
-	title.text = "COOKING STATION"
-	title.add_theme_font_size_override("font_size", 22)
-	vb.add_child(title)
-
-	var appliance_ids: Array = lvl.get("appliances", [])
-	_build_cook_raw_row(vb, appliance_ids)
-
-	var appliances_box := HBoxContainer.new()
-	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	appliances_box.add_theme_constant_override("separation", 10)
-	vb.add_child(appliances_box)
-	for app_id in appliance_ids:
-		var app_data := DataLoader.get_appliance(app_id)
-		if app_data.is_empty():
-			continue
-		var app := ApplianceScene.instantiate() as Appliance
-		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		appliances_box.add_child(app)
-		app.setup(app_id, app_data)
-		app.item_cooked.connect(_on_cooked)
-		app.item_burnt.connect(_on_burnt)
-		_appliances_ui.append(app)
 	return root
 
 func _build_combined_page(lvl: Dictionary) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	margin.add_child(vb)
-
-	var prep_title := Label.new()
-	prep_title.text = "PREP"
-	prep_title.add_theme_font_size_override("font_size", 20)
-	vb.add_child(prep_title)
-	_build_prep_section(vb, lvl)
-
-	var cook_title := Label.new()
-	cook_title.text = "COOK"
-	cook_title.add_theme_font_size_override("font_size", 20)
-	vb.add_child(cook_title)
-
-	var appliance_ids: Array = lvl.get("appliances", [])
-	_build_cook_raw_row(vb, appliance_ids)
-
-	var appliances_box := HBoxContainer.new()
-	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	appliances_box.add_theme_constant_override("separation", 10)
-	vb.add_child(appliances_box)
-	for app_id in appliance_ids:
-		var app_data := DataLoader.get_appliance(app_id)
-		if app_data.is_empty():
-			continue
-		var app := ApplianceScene.instantiate() as Appliance
-		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		appliances_box.add_child(app)
-		app.setup(app_id, app_data)
-		app.item_cooked.connect(_on_cooked)
-		app.item_burnt.connect(_on_burnt)
-		_appliances_ui.append(app)
-
+	_build_prep_section(null, lvl)
 	return root
 
 func _cookable_ingredient_ids_for_appliances(appliance_ids: Array) -> Array:
@@ -379,31 +333,51 @@ func _place_on_appliance(ingredient_id: String) -> void:
 				_consume_from_tray([{"ingredient": ingredient_id, "state": "prepped"}])
 			return
 
-func _build_cook_raw_row(parent: Control, appliance_ids: Array) -> void:
-	var place_box := HBoxContainer.new()
-	place_box.add_theme_constant_override("separation", 8)
-	parent.add_child(place_box)
-	var place_label := Label.new()
-	place_label.text = "Place raw:"
-	place_box.add_child(place_label)
+func _build_cook_section(lvl: Dictionary) -> void:
+	_clear_children(_cook_raw_row)
+	_clear_children(_appliance_row)
+	for slot in _cooked_slots:
+		_clear_children(slot)
+	var appliance_ids: Array = lvl.get("appliances", [])
+	_build_cook_raw_row(appliance_ids)
+	for app_id in appliance_ids:
+		var app_data := DataLoader.get_appliance(app_id)
+		if app_data.is_empty():
+			continue
+		var app := ApplianceScene.instantiate() as Appliance
+		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		app.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		_appliance_row.add_child(app)
+		app.setup(app_id, app_data)
+		app.item_cooked.connect(_on_cooked)
+		app.item_burnt.connect(_on_burnt)
+		_appliances_ui.append(app)
+
+func _build_cook_raw_row(appliance_ids: Array) -> void:
 	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
-	for id in cookable_ids:
+	for i in cookable_ids.size():
+		var id: String = cookable_ids[i]
 		var ing := DataLoader.get_ingredient(id)
-		var btn := Button.new()
-		var needs_prep := bool(ing.get("needs_prep", false))
-		var label: String = str(ing.get("prepped_label", ing.get("label", id))) if needs_prep else str(ing.get("label", id))
-		btn.text = label
-		btn.custom_minimum_size = Vector2(130, 44)
-		btn.pressed.connect(func(): _place_on_appliance(id))
-		place_box.add_child(btn)
-		if needs_prep:
+		var btn := RawIngredientButtonScene.instantiate()
+		_cook_raw_row.add_child(btn)
+		btn.setup(id, ing)
+		btn.tapped.connect(_place_on_appliance)
+		if bool(ing.get("needs_prep", false)):
 			_cook_raw_buttons[id] = btn
 
-func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vb.add_child(row)
+		if i < _cooked_slots.size():
+			var cooked := CookedItemScene.instantiate()
+			_cooked_slots[i].add_child(cooked)
+			cooked.set_anchors_preset(Control.PRESET_FULL_RECT)
+			cooked.setup(id, ing)
+			_cooked_items[id] = cooked
+
+func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
+	for slot in _crate_slots:
+		_clear_children(slot)
+	for slot in _bowl_slots:
+		_clear_children(slot)
+	_clear_children(_cutting_board_slot)
 
 	var prep_ids: Array = []
 	for ing_id in lvl.get("prep_ingredients", []):
@@ -411,35 +385,29 @@ func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
 			break
 		prep_ids.append(str(ing_id))
 
-	var raw_col := HBoxContainer.new()
-	raw_col.add_theme_constant_override("separation", 6)
-	row.add_child(raw_col)
-	for id in prep_ids:
+	for i in prep_ids.size():
+		var id: String = prep_ids[i]
 		var ing := DataLoader.get_ingredient(id)
 		if ing.is_empty():
 			continue
 		var btn := RawIngredientButtonScene.instantiate()
-		raw_col.add_child(btn)
+		_crate_slots[i].add_child(btn)
+		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 		btn.setup(id, ing)
 		btn.tapped.connect(_on_raw_pressed)
 		_raw_buttons[id] = btn
 
-	_cutting_board = CuttingBoardScene.instantiate()
-	row.add_child(_cutting_board)
-	_cutting_board.chopped.connect(_on_chopped)
-	_cutting_board.state_changed.connect(_refresh_prep_ui)
-
-	var cont_col := HBoxContainer.new()
-	cont_col.add_theme_constant_override("separation", 6)
-	row.add_child(cont_col)
-	for id in prep_ids:
-		var ing := DataLoader.get_ingredient(id)
-		if ing.is_empty():
-			continue
 		var bowl := ReadyBowlScene.instantiate()
-		cont_col.add_child(bowl)
+		_bowl_slots[i].add_child(bowl)
+		bowl.set_anchors_preset(Control.PRESET_FULL_RECT)
 		bowl.setup(id, ing, CONTAINER_CAPACITY)
 		_ready_bowls[id] = bowl
+
+	_cutting_board = CuttingBoardScene.instantiate()
+	_cutting_board.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cutting_board_slot.add_child(_cutting_board)
+	_cutting_board.chopped.connect(_on_chopped)
+	_cutting_board.state_changed.connect(_refresh_prep_ui)
 
 func _on_raw_pressed(ing_id: String) -> void:
 	if _cutting_board == null or not _cutting_board.is_empty():
@@ -479,6 +447,7 @@ func _add_to_tray(ingredient_id: String, state: String, amount: int) -> void:
 	var key := "%s:%s" % [ingredient_id, state]
 	_ready_tray[key] = int(_ready_tray.get(key, 0)) + amount
 	_refresh_ready_tray_ui()
+	_refresh_cooked_ui()
 	_refresh_order_assemble_buttons()
 	_refresh_prep_ui()
 
@@ -489,8 +458,14 @@ func _consume_from_tray(components: Array) -> void:
 		if int(_ready_tray[key]) == 0:
 			_ready_tray.erase(key)
 	_refresh_ready_tray_ui()
+	_refresh_cooked_ui()
 	_refresh_order_assemble_buttons()
 	_refresh_prep_ui()
+
+func _refresh_cooked_ui() -> void:
+	for id in _cooked_items.keys():
+		var item = _cooked_items[id]
+		item.set_count(int(_ready_tray.get("%s:cooked" % id, 0)))
 
 func _group_components(components: Array) -> Dictionary:
 	var out: Dictionary = {}
@@ -604,6 +579,7 @@ func _spawn_order() -> void:
 	_active_orders.append(card)
 	_orders_spawned += 1
 	_update_card_assemble_state(card)
+	_spawn_customer_for(card)
 
 func _on_order_expired(card: OrderCard) -> void:
 	if not _active_orders.has(card):
@@ -612,6 +588,7 @@ func _on_order_expired(card: OrderCard) -> void:
 	card.queue_free()
 	_stage_angry = true
 	GameManager.record_order_result(false)
+	_dismiss_customer_for(card)
 
 func _on_assemble_pressed(card: OrderCard) -> void:
 	if not _tray_has_components(card.recipe.get("components", [])):
@@ -637,9 +614,43 @@ func _on_serve(card: OrderCard) -> void:
 	card.stop()
 	card.queue_free()
 	GameManager.record_order_result(true)
+	_dismiss_customer_for(card)
 
 func _on_burnt(_ingredient_id: String) -> void:
 	_stage_burnt = true
+
+func _spawn_customer_for(card: OrderCard) -> void:
+	if _customers_layer == null or _window_left == null or _window_right == null:
+		return
+	var customer := CustomerScene.instantiate()
+	_customers_layer.add_child(customer)
+	customer.setup()
+	var target_x := _next_window_x()
+	_occupied_window_xs.append(target_x)
+	_customers_by_card[card] = customer
+	var start_x: float = _customers_layer.size.x + CUSTOMER_OFFSCREEN_MARGIN
+	customer.walk_in(start_x, target_x, _window_left.position.y)
+
+func _dismiss_customer_for(card: OrderCard) -> void:
+	if not _customers_by_card.has(card):
+		return
+	var customer = _customers_by_card[card]
+	_customers_by_card.erase(card)
+	if customer == null or not is_instance_valid(customer):
+		return
+	var target_x: float = customer.position.x
+	_occupied_window_xs.erase(target_x)
+	customer.walk_off(-CUSTOMER_OFFSCREEN_MARGIN)
+
+func _next_window_x() -> float:
+	var x_min: float = _window_left.position.x
+	var x_max: float = _window_right.position.x
+	var step: float = (x_max - x_min) / float(CUSTOMER_QUEUE_SLOTS - 1)
+	for i in CUSTOMER_QUEUE_SLOTS:
+		var x: float = x_min + step * float(i)
+		if not _occupied_window_xs.has(x):
+			return x
+	return x_min
 
 func _on_level_completed(summary: Dictionary) -> void:
 	_level_active = false
