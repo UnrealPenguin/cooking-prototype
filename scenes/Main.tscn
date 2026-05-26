@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://dkidoopjds2ex" path="res://assets/crates/tomato.png" id="6_jlsqs"]
 [ext_resource type="Texture2D" uid="uid://dfanh1c7kylrs" path="res://assets/crates/lettuce.png" id="7"]
 [ext_resource type="Texture2D" uid="uid://brakg42qjsaji" path="res://assets/bowls/empty_bowl.png" id="8"]
-[ext_resource type="Script" path="res://scripts/components/AssemblyPanel.gd" id="9"]
+[ext_resource type="Script" uid="uid://2qwthwryqhb0" path="res://scripts/components/AssemblyPanel.gd" id="9"]
 
 [node name="Main" type="Control" unique_id=573831803]
 layout_mode = 3
@@ -518,9 +518,9 @@ color = Color(0.35, 0.35, 0.4, 0.7)
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 937.0
+offset_left = 938.0
 offset_top = 478.0
-offset_right = 1063.0
+offset_right = 1064.0
 offset_bottom = 658.0
 
 [node name="Placeholder" type="ColorRect" parent="Stage/CookLayer/ApplianceSlot4" unique_id=2007426575]
@@ -625,7 +625,6 @@ theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="Stage/AssemblyPanel/Margin/VB" unique_id=512345004]
 layout_mode = 2
-mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 text = "Assembly"
 horizontal_alignment = 1

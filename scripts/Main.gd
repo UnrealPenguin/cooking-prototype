@@ -60,21 +60,6 @@ var _level_title_label: Label
 var _order_strip: HBoxContainer
 var _stats_label: Label
 
-var _screen_area: Control
-var _pages_holder: Control
-var _swipe_left_hint: Button
-var _swipe_right_hint: Button
-
-var _bottom_bar: HBoxContainer
-var _ready_tray_box: HBoxContainer
-
-var _pages: Array[Control] = []
-var _current_page: int = 0
-var _dragging: bool = false
-var _drag_start_x: float = 0.0
-var _drag_start_offset: float = 0.0
-const SWIPE_THRESHOLD := 80.0
-
 var _active_orders: Array[OrderCard] = []
 var _ready_tray: Dictionary = {}  # "ing:state" -> int count
 var _appliances_ui: Array[Appliance] = []
@@ -126,7 +111,6 @@ func _ready() -> void:
 	_pause_fullscreen_check.button_pressed = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	GameManager.level_started.connect(_on_level_started)
 	GameManager.level_completed.connect(_on_level_completed)
-	get_viewport().size_changed.connect(_on_viewport_resized)
 	# Defer start so autoloads finish loading
 	call_deferred("_start_first_level")
 
@@ -160,71 +144,11 @@ func _build_layout() -> void:
 	_order_strip.add_theme_constant_override("separation", 8)
 	_top_bar.add_child(_order_strip)
 
-	# Screen area (pages)
-	_screen_area = Control.new()
-	_screen_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_screen_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_screen_area.clip_contents = true
-	_screen_area.mouse_filter = Control.MOUSE_FILTER_PASS
-	_screen_area.gui_input.connect(_on_screen_input)
-	_root.add_child(_screen_area)
-
-	_pages_holder = Control.new()
-	_pages_holder.mouse_filter = Control.MOUSE_FILTER_PASS
-	_screen_area.add_child(_pages_holder)
-
-	_swipe_left_hint = Button.new()
-	_swipe_left_hint.text = "◀"
-	_swipe_left_hint.flat = true
-	_swipe_left_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_left_hint.modulate = Color(1, 1, 1, 0.6)
-	_swipe_left_hint.anchor_left = 0
-	_swipe_left_hint.anchor_top = 0.5
-	_swipe_left_hint.offset_left = 4
-	_swipe_left_hint.offset_top = -32
-	_swipe_left_hint.offset_right = 60
-	_swipe_left_hint.offset_bottom = 32
-	_swipe_left_hint.pressed.connect(func(): _goto_page(_current_page - 1))
-	_screen_area.add_child(_swipe_left_hint)
-
-	_swipe_right_hint = Button.new()
-	_swipe_right_hint.text = "▶"
-	_swipe_right_hint.flat = true
-	_swipe_right_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_right_hint.modulate = Color(1, 1, 1, 0.6)
-	_swipe_right_hint.anchor_left = 1
-	_swipe_right_hint.anchor_top = 0.5
-	_swipe_right_hint.offset_left = -60
-	_swipe_right_hint.offset_top = -32
-	_swipe_right_hint.offset_right = -4
-	_swipe_right_hint.offset_bottom = 32
-	_swipe_right_hint.pressed.connect(func(): _goto_page(_current_page + 1))
-	_screen_area.add_child(_swipe_right_hint)
-
-	# Bottom ready tray
-	_bottom_bar = HBoxContainer.new()
-	_bottom_bar.custom_minimum_size = Vector2(0, 70)
-	_bottom_bar.add_theme_constant_override("separation", 6)
-	_root.add_child(_bottom_bar)
-
-	var tray_label := Label.new()
-	tray_label.text = "READY:"
-	tray_label.add_theme_font_size_override("font_size", 14)
-	_bottom_bar.add_child(tray_label)
-
-	_ready_tray_box = HBoxContainer.new()
-	_ready_tray_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_ready_tray_box.add_theme_constant_override("separation", 6)
-	_bottom_bar.add_child(_ready_tray_box)
-
 	_prep_label = Label.new()
 	_prep_label.visible = false
 	_prep_label.add_theme_font_size_override("font_size", 14)
 	_prep_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
 	info_vb.add_child(_prep_label)
-
-func _on_viewport_resized() -> void:
-	_relayout_pages()
 
 func _on_level_started(lvl: Dictionary) -> void:
 	_level_active = true
@@ -249,85 +173,20 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_customers_by_card.clear()
 	_level_title_label.text = str(lvl.get("name", "Shift"))
 	_clear_children(_order_strip)
-	_clear_children(_pages_holder)
-	_clear_children(_ready_tray_box)
-	_pages.clear()
 	_appliances_ui.clear()
 	_cutting_board = null
 	_raw_buttons.clear()
 	_ready_bowls.clear()
 	_cook_raw_buttons.clear()
 	_cooked_items.clear()
-	_current_page = 0
 	_update_stats()
 
-	var mode: String = lvl.get("screen_mode", "single")
-	if mode == "single":
-		var page := _build_combined_page(lvl)
-		_pages_holder.add_child(page)
-		_pages.append(page)
-	else:
-		var prep_page := _build_prep_page(lvl)
-		var cook_page := _build_cook_page(lvl)
-		_pages_holder.add_child(prep_page)
-		_pages_holder.add_child(cook_page)
-		_pages.append(prep_page)
-		_pages.append(cook_page)
-
+	_build_prep_section(lvl)
 	_build_cook_section(lvl)
-	_refresh_ready_tray_ui()
 	_refresh_prep_ui()
-	call_deferred("_relayout_pages")
 
 	if bool(lvl.get("show_swipe_tutorial", false)):
 		_tutorial.visible = true
-
-func _relayout_pages() -> void:
-	var area_size: Vector2 = _screen_area.size
-	if area_size.x <= 0 or area_size.y <= 0:
-		return
-	for i in _pages.size():
-		var page := _pages[i]
-		page.position = Vector2(i * area_size.x, 0)
-		page.custom_minimum_size = area_size
-		page.size = area_size
-	_pages_holder.position = Vector2(-_current_page * area_size.x, 0)
-	_update_swipe_hints()
-
-func _update_swipe_hints() -> void:
-	var multi := _pages.size() > 1
-	_swipe_left_hint.visible = multi and _current_page > 0
-	_swipe_right_hint.visible = multi and _current_page < _pages.size() - 1
-
-func _build_prep_page(lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	margin.add_child(vb)
-	var title := Label.new()
-	title.text = "PREP STATION"
-	title.add_theme_font_size_override("font_size", 22)
-	vb.add_child(title)
-	_build_prep_section(vb, lvl)
-	return root
-
-func _build_cook_page(_lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	return root
-
-func _build_combined_page(lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	_build_prep_section(null, lvl)
-	return root
 
 func _cookable_ingredient_ids_for_appliances(appliance_ids: Array) -> Array:
 	var out: Array = []
@@ -394,7 +253,7 @@ func _build_cook_raw_row(appliance_ids: Array) -> void:
 			cooked.setup(id, ing)
 			_cooked_items[id] = cooked
 
-func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
+func _build_prep_section(lvl: Dictionary) -> void:
 	for slot in _crate_slots:
 		_clear_children(slot)
 	for slot in _bowl_slots:
@@ -468,9 +327,7 @@ func _refresh_prep_ui() -> void:
 func _add_to_tray(ingredient_id: String, state: String, amount: int) -> void:
 	var key := "%s:%s" % [ingredient_id, state]
 	_ready_tray[key] = int(_ready_tray.get(key, 0)) + amount
-	_refresh_ready_tray_ui()
 	_refresh_cooked_ui()
-	_refresh_order_assemble_buttons()
 	_refresh_prep_ui()
 
 func _consume_from_tray(components: Array) -> void:
@@ -479,9 +336,7 @@ func _consume_from_tray(components: Array) -> void:
 		_ready_tray[key] = max(0, int(_ready_tray.get(key, 0)) - int(grouped[key]))
 		if int(_ready_tray[key]) == 0:
 			_ready_tray.erase(key)
-	_refresh_ready_tray_ui()
 	_refresh_cooked_ui()
-	_refresh_order_assemble_buttons()
 	_refresh_prep_ui()
 
 func _refresh_cooked_ui() -> void:
@@ -495,57 +350,6 @@ func _group_components(components: Array) -> Dictionary:
 		var key := "%s:%s" % [comp.get("ingredient", ""), comp.get("state", "")]
 		out[key] = int(out.get(key, 0)) + 1
 	return out
-
-func _tray_has_components(components: Array) -> bool:
-	var grouped := _group_components(components)
-	for key in grouped.keys():
-		if int(_ready_tray.get(key, 0)) < int(grouped[key]):
-			return false
-	return true
-
-func _refresh_ready_tray_ui() -> void:
-	_clear_children(_ready_tray_box)
-	for key in _ready_tray.keys():
-		var parts: PackedStringArray = key.split(":")
-		var ing_id: String = parts[0]
-		var state: String = parts[1]
-		var ing := DataLoader.get_ingredient(ing_id)
-		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(140, 56)
-		var mb := MarginContainer.new()
-		mb.add_theme_constant_override("margin_left", 6)
-		mb.add_theme_constant_override("margin_right", 6)
-		mb.add_theme_constant_override("margin_top", 4)
-		mb.add_theme_constant_override("margin_bottom", 4)
-		panel.add_child(mb)
-		var hb := HBoxContainer.new()
-		mb.add_child(hb)
-		var color := ColorRect.new()
-		color.color = DataLoader.parse_color(str(ing.get("color", "#CCCCCC")))
-		if state == "cooked":
-			color.color = color.color.lightened(0.15)
-		color.custom_minimum_size = Vector2(22, 22)
-		hb.add_child(color)
-		var lbl := Label.new()
-		var text: String = ing.get("label", ing_id)
-		if state == "prepped":
-			text = ing.get("prepped_label", text)
-		elif state == "cooked":
-			text = ing.get("cooked_label", text)
-		lbl.text = "  %s x%d" % [text, int(_ready_tray[key])]
-		lbl.add_theme_font_size_override("font_size", 12)
-		hb.add_child(lbl)
-		_ready_tray_box.add_child(panel)
-
-func _refresh_order_assemble_buttons() -> void:
-	for card in _active_orders:
-		_update_card_assemble_state(card)
-
-func _update_card_assemble_state(card: OrderCard) -> void:
-	var btn := card.find_child("AssembleBtn", true, false) as Button
-	if btn == null:
-		return
-	btn.disabled = not _tray_has_components(card.recipe.get("components", []))
 
 func _clear_children(n: Node) -> void:
 	for c in n.get_children():
@@ -651,7 +455,6 @@ func _on_ingredient_dropped(ing_id: String, state: String) -> void:
 		_ready_tray.erase(key)
 	_push_to_assembly({"ingredient": ing_id, "state": state})
 	if state == "prepped":
-		_refresh_ready_tray_ui()
 		_refresh_prep_ui()
 	else:
 		_refresh_cooked_ui()
@@ -681,12 +484,6 @@ func _can_add_to_assembly(ingredient_id: String, state: String) -> bool:
 
 func _push_to_assembly(comp: Dictionary) -> void:
 	_assembly.append(comp)
-	_refresh_assembly_ui()
-
-func _remove_from_assembly(idx: int) -> void:
-	if idx < 0 or idx >= _assembly.size():
-		return
-	_assembly.remove_at(idx)
 	_refresh_assembly_ui()
 
 func _clear_assembly(_idx: int = -1) -> void:
@@ -874,43 +671,3 @@ func _clear_active_ui() -> void:
 		c.queue_free()
 	_active_orders.clear()
 	_ready_tray.clear()
-
-# Swipe handling
-func _on_screen_input(event: InputEvent) -> void:
-	if _pages.size() <= 1:
-		return
-	if event is InputEventScreenTouch or event is InputEventMouseButton:
-		if event.pressed:
-			_dragging = true
-			_drag_start_x = event.position.x
-			_drag_start_offset = _pages_holder.position.x
-		else:
-			if not _dragging:
-				return
-			_dragging = false
-			var diff: float = event.position.x - _drag_start_x
-			var target := _current_page
-			if diff < -SWIPE_THRESHOLD and _current_page < _pages.size() - 1:
-				target = _current_page + 1
-			elif diff > SWIPE_THRESHOLD and _current_page > 0:
-				target = _current_page - 1
-			_animate_to_page(target)
-	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
-		if _dragging:
-			var diff: float = event.position.x - _drag_start_x
-			var new_x := _drag_start_offset + diff
-			var max_x: float = 0.0
-			var min_x: float = -(float(_pages.size() - 1) * _screen_area.size.x)
-			_pages_holder.position.x = clamp(new_x, min_x, max_x)
-
-func _goto_page(page_idx: int) -> void:
-	if page_idx < 0 or page_idx >= _pages.size():
-		return
-	_animate_to_page(page_idx)
-
-func _animate_to_page(page_idx: int) -> void:
-	_current_page = page_idx
-	var target_x := -page_idx * _screen_area.size.x
-	var tween := create_tween()
-	tween.tween_property(_pages_holder, "position:x", target_x, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_update_swipe_hints()
