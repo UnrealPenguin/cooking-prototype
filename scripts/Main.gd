@@ -7,6 +7,7 @@ const RawIngredientButtonScene := preload("res://scenes/components/RawIngredient
 const ReadyBowlScene := preload("res://scenes/components/ReadyBowl.tscn")
 const CookedItemScene := preload("res://scenes/components/CookedItem.tscn")
 const CustomerScene := preload("res://scenes/components/Customer.tscn")
+const AssemblyRowScene := preload("res://scenes/components/AssemblyRow.tscn")
 
 const CUSTOMER_QUEUE_SLOTS := 3
 const CUSTOMER_OFFSCREEN_MARGIN := 200.0
@@ -14,7 +15,6 @@ const CUSTOMER_OFFSCREEN_MARGIN := 200.0
 const CONTAINER_CAPACITY := 3
 
 @onready var _root: VBoxContainer = %Root
-@onready var _assembly_view: AssemblyView = %AssemblyView
 @onready var _crate_slots: Array[Control] = [
 	%CrateSlot1, %CrateSlot2, %CrateSlot3, %CrateSlot4, %CrateSlot5,
 ]
@@ -47,6 +47,9 @@ const CONTAINER_CAPACITY := 3
 @onready var _pause_fullscreen_check: CheckBox = %FullscreenCheck
 @onready var _close_sub_settings_btn: Button = %CloseSubSettingsBtn
 @onready var _pause_btn_scene: TextureButton = %PauseBtn
+@onready var _assembly_panel: PanelContainer = %AssemblyPanel
+@onready var _assembly_rows: Container = %AssemblyRows
+@onready var _trash_can: ColorRect = %TrashCan
 
 var _top_bar: HBoxContainer
 var _level_title_label: Label
@@ -76,6 +79,7 @@ var _raw_buttons: Dictionary = {}  # ingredient_id -> Button (cutting-board raws
 var _ready_bowls: Dictionary = {}  # ingredient_id -> ReadyBowl
 var _cook_raw_buttons: Dictionary = {}  # ingredient_id -> Button (place-on-appliance raws)
 var _cooked_items: Dictionary = {}  # ingredient_id -> CookedItem
+var _assembly: Array[Dictionary] = []  # [{ingredient, state}, ...]
 var _customers_by_card: Dictionary = {}  # OrderCard -> Customer
 var _occupied_window_xs: Array[float] = []
 const MAX_PREP_SLOTS := 5
@@ -94,14 +98,14 @@ var _stage_angry: bool = false
 
 func _ready() -> void:
 	_build_layout()
-	_assembly_view.served.connect(_on_serve)
-	_assembly_view.cancelled.connect(_on_assemble_cancel)
 	_restart_btn.pressed.connect(_on_restart)
 	_next_btn.pressed.connect(_on_next_level)
 	_home_btn.pressed.connect(_on_quit_to_home)
 	_tutorial_start_btn.pressed.connect(_on_tutorial_dismiss)
 	_resume_btn.pressed.connect(_on_resume)
 	_pause_btn_scene.pressed.connect(_on_pause)
+	if _trash_can != null and _trash_can.has_signal("item_trashed"):
+		_trash_can.item_trashed.connect(_clear_assembly)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
 	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
 	_quit_btn.pressed.connect(_on_quit_to_home)
@@ -225,6 +229,8 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_update_prep_overlay()
 	_active_orders.clear()
 	_ready_tray.clear()
+	_assembly.clear()
+	_refresh_assembly_ui()
 	_occupied_window_xs.clear()
 	if _customers_layer != null:
 		for child in _customers_layer.get_children():
@@ -370,6 +376,7 @@ func _build_cook_raw_row(appliance_ids: Array) -> void:
 			_cooked_slots[i].add_child(cooked)
 			cooked.set_anchors_preset(Control.PRESET_FULL_RECT)
 			cooked.setup(id, ing)
+			cooked.tapped.connect(_on_cooked_item_tapped)
 			_cooked_items[id] = cooked
 
 func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
@@ -401,6 +408,7 @@ func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
 		_bowl_slots[i].add_child(bowl)
 		bowl.set_anchors_preset(Control.PRESET_FULL_RECT)
 		bowl.setup(id, ing, CONTAINER_CAPACITY)
+		bowl.tapped.connect(_on_ready_bowl_tapped)
 		_ready_bowls[id] = bowl
 
 	_cutting_board = CuttingBoardScene.instantiate()
@@ -568,17 +576,10 @@ func _spawn_order() -> void:
 	_order_strip.add_child(card)
 	card.setup(recipe_id, recipe)
 	card.expired.connect(_on_order_expired)
-	# Add Assemble button to the card
-	var btn := Button.new()
-	btn.name = "AssembleBtn"
-	btn.text = "Assemble"
-	btn.disabled = true
-	btn.pressed.connect(func(): _on_assemble_pressed(card))
-	var vb := card.get_node("Inner/Margin/VB")
-	vb.add_child(btn)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.gui_input.connect(func(event): _on_order_card_input(card, event))
 	_active_orders.append(card)
 	_orders_spawned += 1
-	_update_card_assemble_state(card)
 	_spawn_customer_for(card)
 
 func _on_order_expired(card: OrderCard) -> void:
@@ -589,14 +590,6 @@ func _on_order_expired(card: OrderCard) -> void:
 	_stage_angry = true
 	GameManager.record_order_result(false)
 	_dismiss_customer_for(card)
-
-func _on_assemble_pressed(card: OrderCard) -> void:
-	if not _tray_has_components(card.recipe.get("components", [])):
-		return
-	_assembly_view.open_for(card)
-
-func _on_assemble_cancel() -> void:
-	pass
 
 func _on_serve(card: OrderCard) -> void:
 	if card == null or not _active_orders.has(card):
@@ -609,7 +602,8 @@ func _on_serve(card: OrderCard) -> void:
 	GameManager.add_coins(coins)
 	MissionManager.track_coins_earned(coins)
 	_update_stats()
-	_consume_from_tray(card.recipe.get("components", []))
+	_assembly.clear()
+	_refresh_assembly_ui()
 	_active_orders.erase(card)
 	card.stop()
 	card.queue_free()
@@ -619,17 +613,111 @@ func _on_serve(card: OrderCard) -> void:
 func _on_burnt(_ingredient_id: String) -> void:
 	_stage_burnt = true
 
+func _on_order_card_input(card: OrderCard, event: InputEvent) -> void:
+	var tapped: bool = false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		tapped = true
+	elif event is InputEventScreenTouch and event.pressed:
+		tapped = true
+	if not tapped:
+		return
+	if _assembly_matches_recipe(card.recipe):
+		_on_serve(card)
+
+func _on_ready_bowl_tapped(ing_id: String) -> void:
+	if _assembly_contains(ing_id, "prepped"):
+		return
+	var key := "%s:prepped" % ing_id
+	if int(_ready_tray.get(key, 0)) <= 0:
+		return
+	_ready_tray[key] = int(_ready_tray[key]) - 1
+	if int(_ready_tray[key]) == 0:
+		_ready_tray.erase(key)
+	_push_to_assembly({"ingredient": ing_id, "state": "prepped"})
+	_refresh_ready_tray_ui()
+	_refresh_prep_ui()
+
+func _on_cooked_item_tapped(ing_id: String) -> void:
+	if _assembly_contains(ing_id, "cooked"):
+		return
+	var key := "%s:cooked" % ing_id
+	if int(_ready_tray.get(key, 0)) <= 0:
+		return
+	_ready_tray[key] = int(_ready_tray[key]) - 1
+	if int(_ready_tray[key]) == 0:
+		_ready_tray.erase(key)
+	_push_to_assembly({"ingredient": ing_id, "state": "cooked"})
+	_refresh_cooked_ui()
+
+func _assembly_contains(ing_id: String, state: String) -> bool:
+	for comp in _assembly:
+		if str(comp.get("ingredient", "")) == ing_id and str(comp.get("state", "")) == state:
+			return true
+	return false
+
+func _push_to_assembly(comp: Dictionary) -> void:
+	_assembly.append(comp)
+	_refresh_assembly_ui()
+
+func _remove_from_assembly(idx: int) -> void:
+	if idx < 0 or idx >= _assembly.size():
+		return
+	_assembly.remove_at(idx)
+	_refresh_assembly_ui()
+
+func _clear_assembly(_idx: int = -1) -> void:
+	_assembly.clear()
+	_refresh_assembly_ui()
+
+func _assembly_matches_recipe(recipe: Dictionary) -> bool:
+	var required := _group_components(recipe.get("components", []))
+	var have := _group_components(_assembly)
+	if required.size() != have.size():
+		return false
+	for key in required.keys():
+		if int(have.get(key, 0)) != int(required[key]):
+			return false
+	return true
+
+func _refresh_assembly_ui() -> void:
+	if _assembly_rows == null:
+		return
+	_clear_children(_assembly_rows)
+	for i in _assembly.size():
+		var comp: Dictionary = _assembly[i]
+		var row := AssemblyRowScene.instantiate()
+		row.index = i
+		row.set_meta("comp", comp)
+		var ing := DataLoader.get_ingredient(str(comp.get("ingredient", "")))
+		var state: String = str(comp.get("state", "prepped"))
+		var text: String = ing.get("label", comp.get("ingredient", ""))
+		if state == "prepped":
+			text = ing.get("prepped_label", text)
+		elif state == "cooked":
+			text = ing.get("cooked_label", text)
+		_assembly_rows.add_child(row)
+		row.setup(text, DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))))
+
 func _spawn_customer_for(card: OrderCard) -> void:
 	if _customers_layer == null or _window_left == null or _window_right == null:
 		return
 	var customer := CustomerScene.instantiate()
 	_customers_layer.add_child(customer)
 	customer.setup()
+	var color := DataLoader.parse_color(str(card.recipe.get("color", "#FFC107")))
+	customer.show_order(_format_recipe_ingredients(card.recipe), color)
 	var target_x := _next_window_x()
 	_occupied_window_xs.append(target_x)
 	_customers_by_card[card] = customer
+	customer.tapped.connect(func(): _on_customer_tapped(card))
 	var start_x: float = _customers_layer.size.x + CUSTOMER_OFFSCREEN_MARGIN
 	customer.walk_in(start_x, target_x, _window_left.position.y)
+
+func _on_customer_tapped(card: OrderCard) -> void:
+	if not _active_orders.has(card):
+		return
+	if _assembly_matches_recipe(card.recipe):
+		_on_serve(card)
 
 func _dismiss_customer_for(card: OrderCard) -> void:
 	if not _customers_by_card.has(card):
@@ -641,6 +729,14 @@ func _dismiss_customer_for(card: OrderCard) -> void:
 	var target_x: float = customer.position.x
 	_occupied_window_xs.erase(target_x)
 	customer.walk_off(-CUSTOMER_OFFSCREEN_MARGIN)
+
+func _format_recipe_ingredients(recipe: Dictionary) -> String:
+	var names: Array[String] = []
+	for comp in recipe.get("components", []):
+		var ing_id: String = comp.get("ingredient", "")
+		var ing: Dictionary = DataLoader.get_ingredient(ing_id)
+		names.append(str(ing.get("label", ing_id)))
+	return " + ".join(names)
 
 func _next_window_x() -> float:
 	var x_min: float = _window_left.position.x

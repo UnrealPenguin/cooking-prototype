@@ -2,6 +2,7 @@ extends Control
 
 signal arrived_at_window
 signal left_screen
+signal tapped
 
 const SPRITES := [
 	"res://assets/customers/cat.png",
@@ -15,14 +16,32 @@ const BOB_AMPLITUDE := 6.0
 const BOB_PERIOD := 0.35
 
 @onready var _sprite: TextureRect = %Sprite
+@onready var _bubble: Control = %OrderBubble
 
 var _bob_time: float = 0.0
 var _walking: bool = false
 var _base_y: float = 0.0
+var _arrived: bool = false
+var _pending_order_text: String = ""
+var _pending_order_color: Color = Color(1, 1, 1, 1)
+var _has_pending_order: bool = false
 
 func _ready() -> void:
 	size = custom_minimum_size
 	pivot_offset = size / 2.0
+	_bubble.visible = false
+	gui_input.connect(_on_gui_input)
+
+func _on_gui_input(event: InputEvent) -> void:
+	if not _arrived:
+		return
+	var tapped_now: bool = false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		tapped_now = true
+	elif event is InputEventScreenTouch and event.pressed:
+		tapped_now = true
+	if tapped_now:
+		emit_signal("tapped")
 
 func setup(sprite_path: String = "") -> void:
 	if not is_node_ready():
@@ -44,9 +63,30 @@ func walk_in(start_x: float, target_x: float, y: float) -> void:
 	await tween.finished
 	_walking = false
 	position.y = _base_y
+	_arrived = true
+	if _has_pending_order:
+		_bubble.setup(_pending_order_text, _pending_order_color)
+		_bubble.visible = true
 	emit_signal("arrived_at_window")
 
+func show_order(text: String, accent_color: Color = Color(1, 1, 1, 1)) -> void:
+	if not is_node_ready():
+		await ready
+	_pending_order_text = text
+	_pending_order_color = accent_color
+	_has_pending_order = true
+	if _arrived:
+		_bubble.setup(text, accent_color)
+		_bubble.visible = true
+
+func hide_order() -> void:
+	if not is_node_ready():
+		await ready
+	_has_pending_order = false
+	_bubble.visible = false
+
 func walk_off(exit_x: float) -> void:
+	_bubble.visible = false
 	_walking = true
 	var distance: float = abs(exit_x - position.x)
 	var duration: float = distance / WALK_SPEED

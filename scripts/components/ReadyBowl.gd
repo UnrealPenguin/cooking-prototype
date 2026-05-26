@@ -1,5 +1,7 @@
 extends Control
 
+signal tapped(ingredient_id: String)
+
 @onready var _bowl: TextureRect = %Bowl
 @onready var _count_label: Label = %CountLabel
 
@@ -8,6 +10,18 @@ var _capacity: int = 3
 var _count: int = 0
 var _empty_texture: Texture2D
 var _full_texture: Texture2D
+
+func _ready() -> void:
+	gui_input.connect(_on_gui_input)
+
+func _on_gui_input(event: InputEvent) -> void:
+	var tapped_now := false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		tapped_now = true
+	elif event is InputEventScreenTouch and event.pressed:
+		tapped_now = true
+	if tapped_now and _count > 0:
+		emit_signal("tapped", ingredient_id)
 
 func setup(id: String, data: Dictionary, capacity: int = 3) -> void:
 	ingredient_id = id

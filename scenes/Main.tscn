@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://d0qke831ygowc"]
 
 [ext_resource type="Script" uid="uid://bk8bixm3uq3dk" path="res://scripts/Main.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/AssemblyView.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://05gvj2vd5h2b" path="res://assets/backgrounds/sunny_bg.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://dr5felkkkmfqd" path="res://assets/backgrounds/kitchen_main.png" id="4"]
 [ext_resource type="Texture2D" uid="uid://dm4ycf1aqdqhl" path="res://assets/ui/pause.png" id="5"]
+[ext_resource type="Script" uid="uid://dvvfxiflc0ljp" path="res://scripts/components/TrashCan.gd" id="6"]
 
 [node name="Main" type="Control" unique_id=573831803]
 layout_mode = 3
@@ -122,36 +122,36 @@ offset_bottom = 459.0
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 132.0
+offset_left = 119.0
 offset_top = 363.0
-offset_right = 228.0
+offset_right = 215.0
 offset_bottom = 459.0
 
 [node name="CrateSlot3" type="Control" parent="Stage/PrepLayer" unique_id=420633259]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 244.0
+offset_left = 219.0
 offset_top = 363.0
-offset_right = 340.0
+offset_right = 315.0
 offset_bottom = 459.0
 
 [node name="CrateSlot4" type="Control" parent="Stage/PrepLayer" unique_id=290821026]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 356.0
+offset_left = 320.0
 offset_top = 363.0
-offset_right = 452.0
+offset_right = 416.0
 offset_bottom = 459.0
 
 [node name="CrateSlot5" type="Control" parent="Stage/PrepLayer" unique_id=1016313935]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 468.0
+offset_left = 420.0
 offset_top = 363.0
-offset_right = 564.0
+offset_right = 516.0
 offset_bottom = 459.0
 
 [node name="BowlSlot1" type="Control" parent="Stage/PrepLayer" unique_id=680272483]
@@ -168,36 +168,36 @@ unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
 offset_left = 110.0
-offset_top = 490.0
+offset_top = 496.0
 offset_right = 206.0
-offset_bottom = 586.0
+offset_bottom = 592.0
 
 [node name="BowlSlot3" type="Control" parent="Stage/PrepLayer" unique_id=1973662092]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 244.0
-offset_top = 480.0
-offset_right = 340.0
-offset_bottom = 576.0
+offset_left = 84.0
+offset_top = 571.0
+offset_right = 180.0
+offset_bottom = 667.0
 
 [node name="BowlSlot4" type="Control" parent="Stage/PrepLayer" unique_id=1201809701]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 356.0
-offset_top = 480.0
-offset_right = 452.0
-offset_bottom = 576.0
+offset_left = -13.0
+offset_top = 434.0
+offset_right = 83.0
+offset_bottom = 530.0
 
 [node name="BowlSlot5" type="Control" parent="Stage/PrepLayer" unique_id=1419678846]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
-offset_left = 468.0
-offset_top = 480.0
-offset_right = 564.0
-offset_bottom = 576.0
+offset_left = -11.0
+offset_top = 513.0
+offset_right = 85.0
+offset_bottom = 609.0
 
 [node name="CuttingBoardSlot" type="Control" parent="Stage/PrepLayer" unique_id=113438677]
 unique_name_in_owner = true
@@ -265,6 +265,75 @@ offset_top = 369.0
 offset_right = 1121.0
 offset_bottom = 465.0
 
+[node name="AssemblyPanel" type="PanelContainer" parent="Stage" unique_id=512345001]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 266.0
+offset_top = -517.0
+offset_right = 566.0
+offset_bottom = -433.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Margin" type="MarginContainer" parent="Stage/AssemblyPanel" unique_id=512345002]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
+
+[node name="VB" type="VBoxContainer" parent="Stage/AssemblyPanel/Margin" unique_id=512345003]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Stage/AssemblyPanel/Margin/VB" unique_id=512345004]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Assembly"
+horizontal_alignment = 1
+
+[node name="AssemblyRows" type="HFlowContainer" parent="Stage/AssemblyPanel/Margin/VB" unique_id=512345005]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 4
+
+[node name="TrashCan" type="ColorRect" parent="Stage" unique_id=512345010]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -100.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+color = Color(0.75, 0.15, 0.15, 0.85)
+script = ExtResource("6")
+
+[node name="TrashLabel" type="Label" parent="Stage/TrashCan" unique_id=512345011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "TRASH"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Root" type="VBoxContainer" parent="Stage" unique_id=1869934496]
 unique_name_in_owner = true
 visible = false
@@ -275,11 +344,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 4
-
-[node name="AssemblyView" parent="Stage" unique_id=1947692124 instance=ExtResource("2")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
 
 [node name="PauseBtn" type="TextureButton" parent="." unique_id=1782314010]
 unique_name_in_owner = true
