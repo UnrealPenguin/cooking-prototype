@@ -103,7 +103,7 @@ func _render() -> void:
 			_label.text = "BURNT"
 			_color_rect.color = Color(0.1, 0.1, 0.1)
 			_progress.value = 0.0
-			_status.text = "TAP TO DISCARD"
+			_status.text = "DRAG TO TRASH"
 		State.CLEANING:
 			_label.text = "Cleaning..."
 			_color_rect.color = Color(0.4, 0.4, 0.4)
@@ -134,7 +134,23 @@ func _on_gui_input(event: InputEvent) -> void:
 		ingredient = {}
 		_timer = 0.0
 		_render()
-	elif state == State.BURNT:
-		state = State.CLEANING
-		_timer = 0.0
-		_render()
+
+func _get_drag_data(_at_position: Vector2):
+	if state != State.BURNT:
+		return null
+	var preview := Label.new()
+	preview.text = "BURNT"
+	preview.add_theme_font_size_override("font_size", 14)
+	preview.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	var bg := PanelContainer.new()
+	bg.modulate = Color(0.9, 0.3, 0.1, 0.9)
+	bg.add_child(preview)
+	set_drag_preview(bg)
+	return {"type": "burnt_slot", "slot": self}
+
+func discard_burnt() -> void:
+	if state != State.BURNT:
+		return
+	state = State.CLEANING
+	_timer = 0.0
+	_render()

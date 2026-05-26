@@ -22,8 +22,12 @@ const CONTAINER_CAPACITY := 3
 	%BowlSlot1, %BowlSlot2, %BowlSlot3, %BowlSlot4, %BowlSlot5,
 ]
 @onready var _cutting_board_slot: Control = %CuttingBoardSlot
-@onready var _cook_raw_row: BoxContainer = %CookRawRow
-@onready var _appliance_row: BoxContainer = %ApplianceRow
+@onready var _cook_raw_slots: Array[Control] = [
+	%CookRawSlot1, %CookRawSlot2, %CookRawSlot3, %CookRawSlot4, %CookRawSlot5,
+]
+@onready var _appliance_slots: Array[Control] = [
+	%ApplianceSlot1, %ApplianceSlot2, %ApplianceSlot3, %ApplianceSlot4,
+]
 @onready var _cooked_slots: Array[Control] = [
 	%CookedSlot1, %CookedSlot2, %CookedSlot3,
 ]
@@ -97,6 +101,7 @@ var _stage_burnt: bool = false
 var _stage_angry: bool = false
 
 func _ready() -> void:
+	_hide_slot_placeholders()
 	_build_layout()
 	_restart_btn.pressed.connect(_on_restart)
 	_next_btn.pressed.connect(_on_next_level)
@@ -106,6 +111,8 @@ func _ready() -> void:
 	_pause_btn_scene.pressed.connect(_on_pause)
 	if _trash_can != null and _trash_can.has_signal("item_trashed"):
 		_trash_can.item_trashed.connect(_clear_assembly)
+	if _trash_can != null and _trash_can.has_signal("burnt_slot_trashed"):
+		_trash_can.burnt_slot_trashed.connect(_on_burnt_slot_trashed)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
 	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
 	_quit_btn.pressed.connect(_on_quit_to_home)
@@ -340,20 +347,24 @@ func _place_on_appliance(ingredient_id: String) -> void:
 			return
 
 func _build_cook_section(lvl: Dictionary) -> void:
-	_clear_children(_cook_raw_row)
-	_clear_children(_appliance_row)
+	for slot in _cook_raw_slots:
+		_clear_children(slot)
+	for slot in _appliance_slots:
+		_clear_children(slot)
 	for slot in _cooked_slots:
 		_clear_children(slot)
 	var appliance_ids: Array = lvl.get("appliances", [])
 	_build_cook_raw_row(appliance_ids)
-	for app_id in appliance_ids:
+	for i in appliance_ids.size():
+		if i >= _appliance_slots.size():
+			break
+		var app_id: String = appliance_ids[i]
 		var app_data := DataLoader.get_appliance(app_id)
 		if app_data.is_empty():
 			continue
 		var app := ApplianceScene.instantiate() as Appliance
-		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		app.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		_appliance_row.add_child(app)
+		_appliance_slots[i].add_child(app)
+		app.set_anchors_preset(Control.PRESET_FULL_RECT)
 		app.setup(app_id, app_data)
 		app.item_cooked.connect(_on_cooked)
 		app.item_burnt.connect(_on_burnt)
@@ -362,10 +373,13 @@ func _build_cook_section(lvl: Dictionary) -> void:
 func _build_cook_raw_row(appliance_ids: Array) -> void:
 	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
 	for i in cookable_ids.size():
+		if i >= _cook_raw_slots.size():
+			break
 		var id: String = cookable_ids[i]
 		var ing := DataLoader.get_ingredient(id)
 		var btn := RawIngredientButtonScene.instantiate()
-		_cook_raw_row.add_child(btn)
+		_cook_raw_slots[i].add_child(btn)
+		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 		btn.setup(id, ing)
 		btn.tapped.connect(_place_on_appliance)
 		if bool(ing.get("needs_prep", false)):
@@ -668,6 +682,26 @@ func _remove_from_assembly(idx: int) -> void:
 func _clear_assembly(_idx: int = -1) -> void:
 	_assembly.clear()
 	_refresh_assembly_ui()
+
+func _on_burnt_slot_trashed(slot) -> void:
+	if slot != null and is_instance_valid(slot) and slot.has_method("discard_burnt"):
+		slot.discard_burnt()
+
+func _hide_slot_placeholders() -> void:
+	var slots: Array = []
+	slots.append_array(_crate_slots)
+	slots.append_array(_bowl_slots)
+	slots.append_array(_cooked_slots)
+	slots.append_array(_cook_raw_slots)
+	slots.append_array(_appliance_slots)
+	if _cutting_board_slot != null:
+		slots.append(_cutting_board_slot)
+	for slot in slots:
+		if slot == null:
+			continue
+		var p: Node = slot.get_node_or_null("Placeholder")
+		if p != null and p is CanvasItem:
+			(p as CanvasItem).visible = false
 
 func _assembly_matches_recipe(recipe: Dictionary) -> bool:
 	var required := _group_components(recipe.get("components", []))
