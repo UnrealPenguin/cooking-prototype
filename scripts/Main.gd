@@ -113,6 +113,8 @@ func _ready() -> void:
 		_trash_can.item_trashed.connect(_clear_assembly)
 	if _trash_can != null and _trash_can.has_signal("burnt_slot_trashed"):
 		_trash_can.burnt_slot_trashed.connect(_on_burnt_slot_trashed)
+	if _assembly_panel != null and _assembly_panel.has_signal("ingredient_dropped"):
+		_assembly_panel.ingredient_dropped.connect(_on_ingredient_dropped)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
 	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
 	_quit_btn.pressed.connect(_on_quit_to_home)
@@ -390,7 +392,6 @@ func _build_cook_raw_row(appliance_ids: Array) -> void:
 			_cooked_slots[i].add_child(cooked)
 			cooked.set_anchors_preset(Control.PRESET_FULL_RECT)
 			cooked.setup(id, ing)
-			cooked.tapped.connect(_on_cooked_item_tapped)
 			_cooked_items[id] = cooked
 
 func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
@@ -422,7 +423,6 @@ func _build_prep_section(_vb: VBoxContainer, lvl: Dictionary) -> void:
 		_bowl_slots[i].add_child(bowl)
 		bowl.set_anchors_preset(Control.PRESET_FULL_RECT)
 		bowl.setup(id, ing, CONTAINER_CAPACITY)
-		bowl.tapped.connect(_on_ready_bowl_tapped)
 		_ready_bowls[id] = bowl
 
 	_cutting_board = CuttingBoardScene.instantiate()
@@ -638,34 +638,44 @@ func _on_order_card_input(card: OrderCard, event: InputEvent) -> void:
 	if _assembly_matches_recipe(card.recipe):
 		_on_serve(card)
 
-func _on_ready_bowl_tapped(ing_id: String) -> void:
-	if _assembly_contains(ing_id, "prepped"):
+func _on_ingredient_dropped(ing_id: String, state: String) -> void:
+	if _assembly_contains(ing_id, state):
 		return
-	var key := "%s:prepped" % ing_id
+	if not _can_add_to_assembly(ing_id, state):
+		return
+	var key := "%s:%s" % [ing_id, state]
 	if int(_ready_tray.get(key, 0)) <= 0:
 		return
 	_ready_tray[key] = int(_ready_tray[key]) - 1
 	if int(_ready_tray[key]) == 0:
 		_ready_tray.erase(key)
-	_push_to_assembly({"ingredient": ing_id, "state": "prepped"})
-	_refresh_ready_tray_ui()
-	_refresh_prep_ui()
-
-func _on_cooked_item_tapped(ing_id: String) -> void:
-	if _assembly_contains(ing_id, "cooked"):
-		return
-	var key := "%s:cooked" % ing_id
-	if int(_ready_tray.get(key, 0)) <= 0:
-		return
-	_ready_tray[key] = int(_ready_tray[key]) - 1
-	if int(_ready_tray[key]) == 0:
-		_ready_tray.erase(key)
-	_push_to_assembly({"ingredient": ing_id, "state": "cooked"})
-	_refresh_cooked_ui()
+	_push_to_assembly({"ingredient": ing_id, "state": state})
+	if state == "prepped":
+		_refresh_ready_tray_ui()
+		_refresh_prep_ui()
+	else:
+		_refresh_cooked_ui()
 
 func _assembly_contains(ing_id: String, state: String) -> bool:
 	for comp in _assembly:
 		if str(comp.get("ingredient", "")) == ing_id and str(comp.get("state", "")) == state:
+			return true
+	return false
+
+func _can_add_to_assembly(ingredient_id: String, state: String) -> bool:
+	var candidate := {"ingredient": ingredient_id, "state": state}
+	var proposed: Array = _assembly.duplicate()
+	proposed.append(candidate)
+	var proposed_group: Dictionary = _group_components(proposed)
+	for recipe_id in DataLoader.recipes:
+		var recipe: Dictionary = DataLoader.recipes[recipe_id]
+		var recipe_group: Dictionary = _group_components(recipe.get("components", []))
+		var fits := true
+		for key in proposed_group.keys():
+			if int(proposed_group[key]) > int(recipe_group.get(key, 0)):
+				fits = false
+				break
+		if fits:
 			return true
 	return false
 

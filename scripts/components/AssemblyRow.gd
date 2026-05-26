@@ -21,3 +21,17 @@ func _get_drag_data(_at_position: Vector2):
 	bg.add_child(preview)
 	set_drag_preview(bg)
 	return {"type": "assembly_row", "index": index}
+
+func _can_drop_data(_at_position: Vector2, data) -> bool:
+	return typeof(data) == TYPE_DICTIONARY and str(data.get("type", "")) == "ingredient"
+
+func _drop_data(_at_position: Vector2, data) -> void:
+	var n: Node = get_parent()
+	while n != null and not n.has_signal("ingredient_dropped"):
+		n = n.get_parent()
+	if n != null:
+		n.emit_signal(
+			"ingredient_dropped",
+			str(data.get("ingredient", "")),
+			str(data.get("state", "")),
+		)

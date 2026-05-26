@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://dkidoopjds2ex" path="res://assets/crates/tomato.png" id="6_jlsqs"]
 [ext_resource type="Texture2D" uid="uid://dfanh1c7kylrs" path="res://assets/crates/lettuce.png" id="7"]
 [ext_resource type="Texture2D" uid="uid://brakg42qjsaji" path="res://assets/bowls/empty_bowl.png" id="8"]
+[ext_resource type="Script" path="res://scripts/components/AssemblyPanel.gd" id="9"]
 
 [node name="Main" type="Control" unique_id=573831803]
 layout_mode = 3
@@ -609,6 +610,7 @@ offset_right = 566.0
 offset_bottom = -433.0
 grow_horizontal = 2
 grow_vertical = 0
+script = ExtResource("9")
 
 [node name="Margin" type="MarginContainer" parent="Stage/AssemblyPanel" unique_id=512345002]
 layout_mode = 2
@@ -623,6 +625,7 @@ theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="Stage/AssemblyPanel/Margin/VB" unique_id=512345004]
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 text = "Assembly"
 horizontal_alignment = 1

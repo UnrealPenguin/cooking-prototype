@@ -1,7 +1,5 @@
 extends Control
 
-signal tapped(ingredient_id: String)
-
 @onready var _icon: TextureRect = %Icon
 @onready var _count_label: Label = %CountLabel
 
@@ -10,17 +8,16 @@ var _count: int = 0
 var _texture: Texture2D
 var _empty_texture: Texture2D
 
-func _ready() -> void:
-	gui_input.connect(_on_gui_input)
-
-func _on_gui_input(event: InputEvent) -> void:
-	var tapped_now := false
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		tapped_now = true
-	elif event is InputEventScreenTouch and event.pressed:
-		tapped_now = true
-	if tapped_now and _count > 0:
-		emit_signal("tapped", ingredient_id)
+func _get_drag_data(_at_position: Vector2):
+	if _count <= 0:
+		return null
+	var preview := TextureRect.new()
+	preview.texture = _texture if _texture != null else _empty_texture
+	preview.custom_minimum_size = Vector2(64, 64)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	set_drag_preview(preview)
+	return {"type": "ingredient", "ingredient": ingredient_id, "state": "cooked"}
 
 func setup(id: String, data: Dictionary) -> void:
 	ingredient_id = id
