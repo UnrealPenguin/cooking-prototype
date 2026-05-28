@@ -17,6 +17,7 @@ const BOB_PERIOD := 0.35
 
 @onready var _sprite: TextureRect = %Sprite
 @onready var _bubble: Control = %OrderBubble
+@onready var _timer_bar: ProgressBar = %TimerBar
 
 var _bob_time: float = 0.0
 var _walking: bool = false
@@ -30,6 +31,7 @@ func _ready() -> void:
 	size = custom_minimum_size
 	pivot_offset = size / 2.0
 	_bubble.visible = false
+	_timer_bar.visible = false
 	gui_input.connect(_on_gui_input)
 
 func _on_gui_input(event: InputEvent) -> void:
@@ -67,6 +69,7 @@ func walk_in(start_x: float, target_x: float, y: float) -> void:
 	if _has_pending_order:
 		_bubble.setup(_pending_order_text, _pending_order_color)
 		_bubble.visible = true
+	_timer_bar.visible = true
 	emit_signal("arrived_at_window")
 
 func show_order(text: String, accent_color: Color = Color(1, 1, 1, 1)) -> void:
@@ -85,8 +88,21 @@ func hide_order() -> void:
 	_has_pending_order = false
 	_bubble.visible = false
 
+func set_time_ratio(ratio: float) -> void:
+	if _timer_bar == null:
+		return
+	var clamped: float = clamp(ratio, 0.0, 1.0)
+	_timer_bar.value = clamped
+	if clamped > 0.66:
+		_timer_bar.modulate = Color(0.4, 0.9, 0.3)
+	elif clamped > 0.33:
+		_timer_bar.modulate = Color(1.0, 0.85, 0.2)
+	else:
+		_timer_bar.modulate = Color(1.0, 0.3, 0.2)
+
 func walk_off(exit_x: float) -> void:
 	_bubble.visible = false
+	_timer_bar.visible = false
 	_walking = true
 	var distance: float = abs(exit_x - position.x)
 	var duration: float = distance / WALK_SPEED

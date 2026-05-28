@@ -14,6 +14,9 @@ const CUSTOMER_OFFSCREEN_MARGIN := 200.0
 
 const CONTAINER_CAPACITY := 3
 
+const WRONG_ORDER_COIN_PENALTY := 5
+const WRONG_ORDER_TIME_PENALTY := 10.0
+
 @onready var _root: VBoxContainer = %Root
 @onready var _crate_slots: Array[Control] = [
 	%CrateSlot1, %CrateSlot2, %CrateSlot3, %CrateSlot4, %CrateSlot5,
@@ -373,6 +376,16 @@ func _process(delta: float) -> void:
 		if _spawn_timer >= interval and _active_orders.size() < max_active:
 			_spawn_timer = 0.0
 			_spawn_order()
+	_update_customer_timers()
+
+func _update_customer_timers() -> void:
+	for card in _customers_by_card.keys():
+		var customer = _customers_by_card[card]
+		if customer == null or not is_instance_valid(customer):
+			continue
+		if not is_instance_valid(card) or card.time_limit <= 0.0:
+			continue
+		customer.set_time_ratio(card.time_left / card.time_limit)
 
 func _update_prep_overlay() -> void:
 	if _prep_time_left <= 0.0:
@@ -559,6 +572,17 @@ func _on_customer_tapped(card: OrderCard) -> void:
 		return
 	if _assembly_matches_recipe(card.recipe):
 		_on_serve(card)
+	elif not _assembly.is_empty():
+		_on_wrong_order_served(card)
+
+func _on_wrong_order_served(card: OrderCard) -> void:
+	_stage_coins = max(0, _stage_coins - WRONG_ORDER_COIN_PENALTY)
+	GameManager.add_coins(-WRONG_ORDER_COIN_PENALTY)
+	_stage_angry = true
+	card.time_left = max(0.0, card.time_left - WRONG_ORDER_TIME_PENALTY)
+	_assembly.clear()
+	_refresh_assembly_ui()
+	_update_stats()
 
 func _dismiss_customer_for(card: OrderCard) -> void:
 	if not _customers_by_card.has(card):
