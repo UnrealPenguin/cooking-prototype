@@ -3,11 +3,40 @@ extends Control
 const CuttingBoardScene := preload("res://scenes/CuttingBoard.tscn")
 const ApplianceScene := preload("res://scenes/Appliance.tscn")
 const OrderCardScene := preload("res://scenes/OrderCard.tscn")
+const RawIngredientButtonScene := preload("res://scenes/components/RawIngredientButton.tscn")
+const ReadyBowlScene := preload("res://scenes/components/ReadyBowl.tscn")
+const CookedItemScene := preload("res://scenes/components/CookedItem.tscn")
+const CustomerScene := preload("res://scenes/components/Customer.tscn")
+const AssemblyRowScene := preload("res://scenes/components/AssemblyRow.tscn")
+
+const CUSTOMER_QUEUE_SLOTS := 3
+const CUSTOMER_OFFSCREEN_MARGIN := 200.0
 
 const CONTAINER_CAPACITY := 3
 
+const WRONG_ORDER_COIN_PENALTY := 5
+const WRONG_ORDER_TIME_PENALTY := 10.0
+
 @onready var _root: VBoxContainer = %Root
-@onready var _assembly_view: AssemblyView = $AssemblyView
+@onready var _crate_slots: Array[Control] = [
+	%CrateSlot1, %CrateSlot2, %CrateSlot3, %CrateSlot4, %CrateSlot5,
+]
+@onready var _bowl_slots: Array[Control] = [
+	%BowlSlot1, %BowlSlot2, %BowlSlot3, %BowlSlot4, %BowlSlot5,
+]
+@onready var _cutting_board_slot: Control = %CuttingBoardSlot
+@onready var _cook_raw_slots: Array[Control] = [
+	%CookRawSlot1, %CookRawSlot2, %CookRawSlot3, %CookRawSlot4, %CookRawSlot5,
+]
+@onready var _appliance_slots: Array[Control] = [
+	%ApplianceSlot1, %ApplianceSlot2, %ApplianceSlot3, %ApplianceSlot4,
+]
+@onready var _cooked_slots: Array[Control] = [
+	%CookedSlot1, %CookedSlot2, %CookedSlot3,
+]
+@onready var _customers_layer: Control = %CustomersLayer
+@onready var _window_left: Control = %WindowLeft
+@onready var _window_right: Control = %WindowRight
 @onready var _level_complete: Control = %LevelComplete
 @onready var _level_summary: Label = %Summary
 @onready var _restart_btn: Button = %RestartBtn
@@ -24,35 +53,28 @@ const CONTAINER_CAPACITY := 3
 @onready var _pause_volume_value: Label = %VolumeValue
 @onready var _pause_fullscreen_check: CheckBox = %FullscreenCheck
 @onready var _close_sub_settings_btn: Button = %CloseSubSettingsBtn
+@onready var _pause_btn_scene: TextureButton = %PauseBtn
+@onready var _assembly_panel: PanelContainer = %AssemblyPanel
+@onready var _assembly_rows: Container = %AssemblyRows
+@onready var _trash_can: ColorRect = %TrashCan
 
 var _top_bar: HBoxContainer
 var _level_title_label: Label
 var _order_strip: HBoxContainer
 var _stats_label: Label
-var _pause_btn: Button
-
-var _screen_area: Control
-var _pages_holder: Control
-var _swipe_left_hint: Button
-var _swipe_right_hint: Button
-
-var _bottom_bar: HBoxContainer
-var _ready_tray_box: HBoxContainer
-
-var _pages: Array[Control] = []
-var _current_page: int = 0
-var _dragging: bool = false
-var _drag_start_x: float = 0.0
-var _drag_start_offset: float = 0.0
-const SWIPE_THRESHOLD := 80.0
 
 var _active_orders: Array[OrderCard] = []
 var _ready_tray: Dictionary = {}  # "ing:state" -> int count
 var _appliances_ui: Array[Appliance] = []
 var _cutting_board: Node
 var _raw_buttons: Dictionary = {}  # ingredient_id -> Button (cutting-board raws)
-var _container_labels: Dictionary = {}  # ingredient_id -> Label
+var _ready_bowls: Dictionary = {}  # ingredient_id -> ReadyBowl
 var _cook_raw_buttons: Dictionary = {}  # ingredient_id -> Button (place-on-appliance raws)
+var _cooked_items: Dictionary = {}  # ingredient_id -> CookedItem
+var _assembly: Array[Dictionary] = []  # [{ingredient, state}, ...]
+var _customers_by_card: Dictionary = {}  # OrderCard -> Customer
+var _occupied_window_xs: Array[float] = []
+const MAX_PREP_SLOTS := 5
 
 var _spawn_timer: float = 0.0
 var _orders_spawned: int = 0
@@ -67,14 +89,22 @@ var _stage_burnt: bool = false
 var _stage_angry: bool = false
 
 func _ready() -> void:
+	_hide_slot_placeholders()
 	_build_layout()
-	_assembly_view.served.connect(_on_serve)
-	_assembly_view.cancelled.connect(_on_assemble_cancel)
 	_restart_btn.pressed.connect(_on_restart)
 	_next_btn.pressed.connect(_on_next_level)
 	_home_btn.pressed.connect(_on_quit_to_home)
 	_tutorial_start_btn.pressed.connect(_on_tutorial_dismiss)
 	_resume_btn.pressed.connect(_on_resume)
+	_pause_btn_scene.pressed.connect(_on_pause)
+	if _trash_can != null and _trash_can.has_signal("item_trashed"):
+		_trash_can.item_trashed.connect(_clear_assembly)
+	if _trash_can != null and _trash_can.has_signal("burnt_slot_trashed"):
+		_trash_can.burnt_slot_trashed.connect(_on_burnt_slot_trashed)
+	if _trash_can != null and _trash_can.has_signal("board_chopped_trashed"):
+		_trash_can.board_chopped_trashed.connect(_on_board_chopped_trashed)
+	if _assembly_panel != null and _assembly_panel.has_signal("ingredient_dropped"):
+		_assembly_panel.ingredient_dropped.connect(_on_ingredient_dropped)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
 	_close_sub_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = false)
 	_quit_btn.pressed.connect(_on_quit_to_home)
@@ -86,7 +116,6 @@ func _ready() -> void:
 	_pause_fullscreen_check.button_pressed = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	GameManager.level_started.connect(_on_level_started)
 	GameManager.level_completed.connect(_on_level_completed)
-	get_viewport().size_changed.connect(_on_viewport_resized)
 	# Defer start so autoloads finish loading
 	call_deferred("_start_first_level")
 
@@ -120,78 +149,11 @@ func _build_layout() -> void:
 	_order_strip.add_theme_constant_override("separation", 8)
 	_top_bar.add_child(_order_strip)
 
-	_pause_btn = Button.new()
-	_pause_btn.text = "⏸"
-	_pause_btn.custom_minimum_size = Vector2(56, 56)
-	_pause_btn.add_theme_font_size_override("font_size", 22)
-	_pause_btn.pressed.connect(_on_pause)
-	_top_bar.add_child(_pause_btn)
-
-	# Screen area (pages)
-	_screen_area = Control.new()
-	_screen_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_screen_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_screen_area.clip_contents = true
-	_screen_area.mouse_filter = Control.MOUSE_FILTER_PASS
-	_screen_area.gui_input.connect(_on_screen_input)
-	_root.add_child(_screen_area)
-
-	_pages_holder = Control.new()
-	_pages_holder.mouse_filter = Control.MOUSE_FILTER_PASS
-	_screen_area.add_child(_pages_holder)
-
-	_swipe_left_hint = Button.new()
-	_swipe_left_hint.text = "◀"
-	_swipe_left_hint.flat = true
-	_swipe_left_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_left_hint.modulate = Color(1, 1, 1, 0.6)
-	_swipe_left_hint.anchor_left = 0
-	_swipe_left_hint.anchor_top = 0.5
-	_swipe_left_hint.offset_left = 4
-	_swipe_left_hint.offset_top = -32
-	_swipe_left_hint.offset_right = 60
-	_swipe_left_hint.offset_bottom = 32
-	_swipe_left_hint.pressed.connect(func(): _goto_page(_current_page - 1))
-	_screen_area.add_child(_swipe_left_hint)
-
-	_swipe_right_hint = Button.new()
-	_swipe_right_hint.text = "▶"
-	_swipe_right_hint.flat = true
-	_swipe_right_hint.add_theme_font_size_override("font_size", 48)
-	_swipe_right_hint.modulate = Color(1, 1, 1, 0.6)
-	_swipe_right_hint.anchor_left = 1
-	_swipe_right_hint.anchor_top = 0.5
-	_swipe_right_hint.offset_left = -60
-	_swipe_right_hint.offset_top = -32
-	_swipe_right_hint.offset_right = -4
-	_swipe_right_hint.offset_bottom = 32
-	_swipe_right_hint.pressed.connect(func(): _goto_page(_current_page + 1))
-	_screen_area.add_child(_swipe_right_hint)
-
-	# Bottom ready tray
-	_bottom_bar = HBoxContainer.new()
-	_bottom_bar.custom_minimum_size = Vector2(0, 70)
-	_bottom_bar.add_theme_constant_override("separation", 6)
-	_root.add_child(_bottom_bar)
-
-	var tray_label := Label.new()
-	tray_label.text = "READY:"
-	tray_label.add_theme_font_size_override("font_size", 14)
-	_bottom_bar.add_child(tray_label)
-
-	_ready_tray_box = HBoxContainer.new()
-	_ready_tray_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_ready_tray_box.add_theme_constant_override("separation", 6)
-	_bottom_bar.add_child(_ready_tray_box)
-
 	_prep_label = Label.new()
 	_prep_label.visible = false
 	_prep_label.add_theme_font_size_override("font_size", 14)
 	_prep_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
 	info_vb.add_child(_prep_label)
-
-func _on_viewport_resized() -> void:
-	_relayout_pages()
 
 func _on_level_started(lvl: Dictionary) -> void:
 	_level_active = true
@@ -205,172 +167,31 @@ func _on_level_started(lvl: Dictionary) -> void:
 	_update_prep_overlay()
 	_active_orders.clear()
 	_ready_tray.clear()
+	_assembly.clear()
+	_refresh_assembly_ui()
+	_occupied_window_xs.clear()
+	if _customers_layer != null:
+		for child in _customers_layer.get_children():
+			if child == _window_left or child == _window_right:
+				continue
+			child.queue_free()
+	_customers_by_card.clear()
 	_level_title_label.text = str(lvl.get("name", "Shift"))
 	_clear_children(_order_strip)
-	_clear_children(_pages_holder)
-	_clear_children(_ready_tray_box)
-	_pages.clear()
 	_appliances_ui.clear()
 	_cutting_board = null
 	_raw_buttons.clear()
-	_container_labels.clear()
+	_ready_bowls.clear()
 	_cook_raw_buttons.clear()
-	_current_page = 0
+	_cooked_items.clear()
 	_update_stats()
 
-	var mode: String = lvl.get("screen_mode", "single")
-	if mode == "single":
-		var page := _build_combined_page(lvl)
-		_pages_holder.add_child(page)
-		_pages.append(page)
-	else:
-		var prep_page := _build_prep_page(lvl)
-		var cook_page := _build_cook_page(lvl)
-		_pages_holder.add_child(prep_page)
-		_pages_holder.add_child(cook_page)
-		_pages.append(prep_page)
-		_pages.append(cook_page)
-
-	_refresh_ready_tray_ui()
+	_build_prep_section(lvl)
+	_build_cook_section(lvl)
 	_refresh_prep_ui()
-	call_deferred("_relayout_pages")
 
 	if bool(lvl.get("show_swipe_tutorial", false)):
 		_tutorial.visible = true
-
-func _relayout_pages() -> void:
-	var area_size: Vector2 = _screen_area.size
-	if area_size.x <= 0 or area_size.y <= 0:
-		return
-	for i in _pages.size():
-		var page := _pages[i]
-		page.position = Vector2(i * area_size.x, 0)
-		page.custom_minimum_size = area_size
-		page.size = area_size
-	_pages_holder.position = Vector2(-_current_page * area_size.x, 0)
-	_update_swipe_hints()
-
-func _update_swipe_hints() -> void:
-	var multi := _pages.size() > 1
-	_swipe_left_hint.visible = multi and _current_page > 0
-	_swipe_right_hint.visible = multi and _current_page < _pages.size() - 1
-
-func _build_prep_page(lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.15, 0.22, 0.2, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	margin.add_child(vb)
-	var title := Label.new()
-	title.text = "PREP STATION"
-	title.add_theme_font_size_override("font_size", 22)
-	vb.add_child(title)
-	_build_prep_section(vb, lvl)
-	return root
-
-func _build_cook_page(lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.22, 0.17, 0.15, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	margin.add_child(vb)
-	var title := Label.new()
-	title.text = "COOKING STATION"
-	title.add_theme_font_size_override("font_size", 22)
-	vb.add_child(title)
-
-	var appliance_ids: Array = lvl.get("appliances", [])
-	_build_cook_raw_row(vb, appliance_ids)
-
-	var appliances_box := HBoxContainer.new()
-	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	appliances_box.add_theme_constant_override("separation", 10)
-	vb.add_child(appliances_box)
-	for app_id in appliance_ids:
-		var app_data := DataLoader.get_appliance(app_id)
-		if app_data.is_empty():
-			continue
-		var app := ApplianceScene.instantiate() as Appliance
-		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		appliances_box.add_child(app)
-		app.setup(app_id, app_data)
-		app.item_cooked.connect(_on_cooked)
-		app.item_burnt.connect(_on_burnt)
-		_appliances_ui.append(app)
-	return root
-
-func _build_combined_page(lvl: Dictionary) -> Control:
-	var root := Control.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	var bg := ColorRect.new()
-	bg.color = Color(0.18, 0.20, 0.18, 1)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bg)
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	root.add_child(margin)
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	margin.add_child(vb)
-
-	var prep_title := Label.new()
-	prep_title.text = "PREP"
-	prep_title.add_theme_font_size_override("font_size", 20)
-	vb.add_child(prep_title)
-	_build_prep_section(vb, lvl)
-
-	var cook_title := Label.new()
-	cook_title.text = "COOK"
-	cook_title.add_theme_font_size_override("font_size", 20)
-	vb.add_child(cook_title)
-
-	var appliance_ids: Array = lvl.get("appliances", [])
-	_build_cook_raw_row(vb, appliance_ids)
-
-	var appliances_box := HBoxContainer.new()
-	appliances_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	appliances_box.add_theme_constant_override("separation", 10)
-	vb.add_child(appliances_box)
-	for app_id in appliance_ids:
-		var app_data := DataLoader.get_appliance(app_id)
-		if app_data.is_empty():
-			continue
-		var app := ApplianceScene.instantiate() as Appliance
-		app.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		appliances_box.add_child(app)
-		app.setup(app_id, app_data)
-		app.item_cooked.connect(_on_cooked)
-		app.item_burnt.connect(_on_burnt)
-		_appliances_ui.append(app)
-
-	return root
 
 func _cookable_ingredient_ids_for_appliances(appliance_ids: Array) -> Array:
 	var out: Array = []
@@ -391,92 +212,93 @@ func _place_on_appliance(ingredient_id: String) -> void:
 				_consume_from_tray([{"ingredient": ingredient_id, "state": "prepped"}])
 			return
 
-func _build_cook_raw_row(parent: Control, appliance_ids: Array) -> void:
-	var place_box := HBoxContainer.new()
-	place_box.add_theme_constant_override("separation", 8)
-	parent.add_child(place_box)
-	var place_label := Label.new()
-	place_label.text = "Place raw:"
-	place_box.add_child(place_label)
+func _build_cook_section(lvl: Dictionary) -> void:
+	for slot in _cook_raw_slots:
+		_clear_children(slot)
+	for slot in _appliance_slots:
+		_clear_children(slot)
+	for slot in _cooked_slots:
+		_clear_children(slot)
+	var appliance_ids: Array = lvl.get("appliances", [])
+	_build_cook_raw_row(appliance_ids)
+	for i in appliance_ids.size():
+		if i >= _appliance_slots.size():
+			break
+		var app_id: String = appliance_ids[i]
+		var app_data := DataLoader.get_appliance(app_id)
+		if app_data.is_empty():
+			continue
+		var app := ApplianceScene.instantiate() as Appliance
+		_appliance_slots[i].add_child(app)
+		app.set_anchors_preset(Control.PRESET_FULL_RECT)
+		app.setup(app_id, app_data)
+		app.set_collect_check(_can_accept_cooked)
+		app.item_cooked.connect(_on_cooked)
+		app.item_burnt.connect(_on_burnt)
+		_appliances_ui.append(app)
+
+func _build_cook_raw_row(appliance_ids: Array) -> void:
 	var cookable_ids := _cookable_ingredient_ids_for_appliances(appliance_ids)
-	for id in cookable_ids:
+	for i in cookable_ids.size():
+		if i >= _cook_raw_slots.size():
+			break
+		var id: String = cookable_ids[i]
 		var ing := DataLoader.get_ingredient(id)
-		var btn := Button.new()
-		var needs_prep := bool(ing.get("needs_prep", false))
-		var label: String = str(ing.get("prepped_label", ing.get("label", id))) if needs_prep else str(ing.get("label", id))
-		btn.text = label
-		btn.custom_minimum_size = Vector2(130, 44)
-		btn.pressed.connect(func(): _place_on_appliance(id))
-		place_box.add_child(btn)
-		if needs_prep:
+		var btn := RawIngredientButtonScene.instantiate()
+		_cook_raw_slots[i].add_child(btn)
+		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+		btn.setup(id, ing)
+		btn.tapped.connect(_place_on_appliance)
+		if bool(ing.get("needs_prep", false)):
 			_cook_raw_buttons[id] = btn
 
-func _build_prep_section(vb: VBoxContainer, lvl: Dictionary) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vb.add_child(row)
+		if i < _cooked_slots.size():
+			var cooked := CookedItemScene.instantiate()
+			_cooked_slots[i].add_child(cooked)
+			cooked.set_anchors_preset(Control.PRESET_FULL_RECT)
+			cooked.setup(id, ing)
+			_cooked_items[id] = cooked
 
-	var raw_col := VBoxContainer.new()
-	raw_col.add_theme_constant_override("separation", 6)
-	row.add_child(raw_col)
-	var raw_label := Label.new()
-	raw_label.text = "Raw"
-	raw_label.add_theme_font_size_override("font_size", 14)
-	raw_col.add_child(raw_label)
+func _build_prep_section(lvl: Dictionary) -> void:
+	for slot in _crate_slots:
+		_clear_children(slot)
+	for slot in _bowl_slots:
+		_clear_children(slot)
+	_clear_children(_cutting_board_slot)
+
+	var prep_ids: Array = []
 	for ing_id in lvl.get("prep_ingredients", []):
-		var id: String = str(ing_id)
+		if prep_ids.size() >= MAX_PREP_SLOTS:
+			break
+		prep_ids.append(str(ing_id))
+
+	for i in prep_ids.size():
+		var id: String = prep_ids[i]
 		var ing := DataLoader.get_ingredient(id)
 		if ing.is_empty():
 			continue
-		var btn := Button.new()
-		btn.text = str(ing.get("label", id))
-		btn.custom_minimum_size = Vector2(130, 36)
-		btn.pressed.connect(func(): _on_raw_pressed(id))
-		raw_col.add_child(btn)
+		var btn := RawIngredientButtonScene.instantiate()
+		_crate_slots[i].add_child(btn)
+		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+		btn.setup(id, ing)
+		btn.tapped.connect(_on_raw_pressed)
 		_raw_buttons[id] = btn
 
+		var bowl := ReadyBowlScene.instantiate()
+		_bowl_slots[i].add_child(bowl)
+		bowl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bowl.setup(id, ing, CONTAINER_CAPACITY)
+		_ready_bowls[id] = bowl
+
 	_cutting_board = CuttingBoardScene.instantiate()
-	row.add_child(_cutting_board)
+	_cutting_board.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cutting_board_slot.add_child(_cutting_board)
 	_cutting_board.chopped.connect(_on_chopped)
 	_cutting_board.state_changed.connect(_refresh_prep_ui)
-
-	var cont_col := VBoxContainer.new()
-	cont_col.add_theme_constant_override("separation", 6)
-	row.add_child(cont_col)
-	var cont_title := Label.new()
-	cont_title.text = "Ready"
-	cont_title.add_theme_font_size_override("font_size", 14)
-	cont_col.add_child(cont_title)
-	for ing_id in lvl.get("prep_ingredients", []):
-		var id: String = str(ing_id)
-		var ing := DataLoader.get_ingredient(id)
-		if ing.is_empty():
-			continue
-		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(150, 36)
-		var mb := MarginContainer.new()
-		mb.add_theme_constant_override("margin_left", 6)
-		mb.add_theme_constant_override("margin_right", 6)
-		mb.add_theme_constant_override("margin_top", 2)
-		mb.add_theme_constant_override("margin_bottom", 2)
-		panel.add_child(mb)
-		var hb := HBoxContainer.new()
-		mb.add_child(hb)
-		var color := ColorRect.new()
-		color.color = DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))).lightened(0.15)
-		color.custom_minimum_size = Vector2(18, 18)
-		hb.add_child(color)
-		var lbl := Label.new()
-		lbl.add_theme_font_size_override("font_size", 13)
-		hb.add_child(lbl)
-		cont_col.add_child(panel)
-		_container_labels[id] = lbl
+	_cutting_board.can_collect_callable = _can_accept_prepped
 
 func _on_raw_pressed(ing_id: String) -> void:
 	if _cutting_board == null or not _cutting_board.is_empty():
-		return
-	if _container_count(ing_id) >= CONTAINER_CAPACITY:
 		return
 	var ing := DataLoader.get_ingredient(ing_id)
 	if ing.is_empty() or not bool(ing.get("needs_prep", false)):
@@ -492,19 +314,25 @@ func _on_cooked(ingredient_id: String) -> void:
 func _container_count(ing_id: String) -> int:
 	return int(_ready_tray.get("%s:prepped" % ing_id, 0))
 
+func _cooked_count(ing_id: String) -> int:
+	return int(_ready_tray.get("%s:cooked" % ing_id, 0))
+
+func _can_accept_cooked(ing_id: String) -> bool:
+	return _cooked_count(ing_id) < CONTAINER_CAPACITY
+
+func _can_accept_prepped(ing_id: String) -> bool:
+	return _container_count(ing_id) < CONTAINER_CAPACITY
+
 func _refresh_prep_ui() -> void:
 	if _cutting_board == null:
 		return
 	var board_busy: bool = not _cutting_board.is_empty()
 	for id in _raw_buttons.keys():
 		var btn: Button = _raw_buttons[id]
-		var full := _container_count(id) >= CONTAINER_CAPACITY
-		btn.disabled = board_busy or full
-	for id in _container_labels.keys():
-		var lbl: Label = _container_labels[id]
-		var ing := DataLoader.get_ingredient(id)
-		var text: String = str(ing.get("prepped_label", ing.get("label", id)))
-		lbl.text = " %s %d/%d" % [text, _container_count(id), CONTAINER_CAPACITY]
+		btn.disabled = board_busy
+	for id in _ready_bowls.keys():
+		var bowl = _ready_bowls[id]
+		bowl.set_count(_container_count(id))
 	for id in _cook_raw_buttons.keys():
 		var btn: Button = _cook_raw_buttons[id]
 		btn.disabled = _container_count(id) <= 0
@@ -512,8 +340,7 @@ func _refresh_prep_ui() -> void:
 func _add_to_tray(ingredient_id: String, state: String, amount: int) -> void:
 	var key := "%s:%s" % [ingredient_id, state]
 	_ready_tray[key] = int(_ready_tray.get(key, 0)) + amount
-	_refresh_ready_tray_ui()
-	_refresh_order_assemble_buttons()
+	_refresh_cooked_ui()
 	_refresh_prep_ui()
 
 func _consume_from_tray(components: Array) -> void:
@@ -522,9 +349,15 @@ func _consume_from_tray(components: Array) -> void:
 		_ready_tray[key] = max(0, int(_ready_tray.get(key, 0)) - int(grouped[key]))
 		if int(_ready_tray[key]) == 0:
 			_ready_tray.erase(key)
-	_refresh_ready_tray_ui()
-	_refresh_order_assemble_buttons()
+	_refresh_cooked_ui()
 	_refresh_prep_ui()
+	if _cutting_board != null and _cutting_board.has_method("try_collect"):
+		_cutting_board.try_collect()
+
+func _refresh_cooked_ui() -> void:
+	for id in _cooked_items.keys():
+		var item = _cooked_items[id]
+		item.set_count(int(_ready_tray.get("%s:cooked" % id, 0)))
 
 func _group_components(components: Array) -> Dictionary:
 	var out: Dictionary = {}
@@ -532,57 +365,6 @@ func _group_components(components: Array) -> Dictionary:
 		var key := "%s:%s" % [comp.get("ingredient", ""), comp.get("state", "")]
 		out[key] = int(out.get(key, 0)) + 1
 	return out
-
-func _tray_has_components(components: Array) -> bool:
-	var grouped := _group_components(components)
-	for key in grouped.keys():
-		if int(_ready_tray.get(key, 0)) < int(grouped[key]):
-			return false
-	return true
-
-func _refresh_ready_tray_ui() -> void:
-	_clear_children(_ready_tray_box)
-	for key in _ready_tray.keys():
-		var parts: PackedStringArray = key.split(":")
-		var ing_id: String = parts[0]
-		var state: String = parts[1]
-		var ing := DataLoader.get_ingredient(ing_id)
-		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(140, 56)
-		var mb := MarginContainer.new()
-		mb.add_theme_constant_override("margin_left", 6)
-		mb.add_theme_constant_override("margin_right", 6)
-		mb.add_theme_constant_override("margin_top", 4)
-		mb.add_theme_constant_override("margin_bottom", 4)
-		panel.add_child(mb)
-		var hb := HBoxContainer.new()
-		mb.add_child(hb)
-		var color := ColorRect.new()
-		color.color = DataLoader.parse_color(str(ing.get("color", "#CCCCCC")))
-		if state == "cooked":
-			color.color = color.color.lightened(0.15)
-		color.custom_minimum_size = Vector2(22, 22)
-		hb.add_child(color)
-		var lbl := Label.new()
-		var text: String = ing.get("label", ing_id)
-		if state == "prepped":
-			text = ing.get("prepped_label", text)
-		elif state == "cooked":
-			text = ing.get("cooked_label", text)
-		lbl.text = "  %s x%d" % [text, int(_ready_tray[key])]
-		lbl.add_theme_font_size_override("font_size", 12)
-		hb.add_child(lbl)
-		_ready_tray_box.add_child(panel)
-
-func _refresh_order_assemble_buttons() -> void:
-	for card in _active_orders:
-		_update_card_assemble_state(card)
-
-func _update_card_assemble_state(card: OrderCard) -> void:
-	var btn := card.find_child("AssembleBtn", true, false) as Button
-	if btn == null:
-		return
-	btn.disabled = not _tray_has_components(card.recipe.get("components", []))
 
 func _clear_children(n: Node) -> void:
 	for c in n.get_children():
@@ -606,6 +388,16 @@ func _process(delta: float) -> void:
 		if _spawn_timer >= interval and _active_orders.size() < max_active:
 			_spawn_timer = 0.0
 			_spawn_order()
+	_update_customer_timers()
+
+func _update_customer_timers() -> void:
+	for card in _customers_by_card.keys():
+		var customer = _customers_by_card[card]
+		if customer == null or not is_instance_valid(customer):
+			continue
+		if not is_instance_valid(card) or card.time_limit <= 0.0:
+			continue
+		customer.set_time_ratio(card.time_left / card.time_limit)
 
 func _update_prep_overlay() -> void:
 	if _prep_time_left <= 0.0:
@@ -627,17 +419,11 @@ func _spawn_order() -> void:
 	_order_strip.add_child(card)
 	card.setup(recipe_id, recipe)
 	card.expired.connect(_on_order_expired)
-	# Add Assemble button to the card
-	var btn := Button.new()
-	btn.name = "AssembleBtn"
-	btn.text = "Assemble"
-	btn.disabled = true
-	btn.pressed.connect(func(): _on_assemble_pressed(card))
-	var vb := card.get_node("Inner/Margin/VB")
-	vb.add_child(btn)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.gui_input.connect(func(event): _on_order_card_input(card, event))
 	_active_orders.append(card)
 	_orders_spawned += 1
-	_update_card_assemble_state(card)
+	_spawn_customer_for(card)
 
 func _on_order_expired(card: OrderCard) -> void:
 	if not _active_orders.has(card):
@@ -646,14 +432,7 @@ func _on_order_expired(card: OrderCard) -> void:
 	card.queue_free()
 	_stage_angry = true
 	GameManager.record_order_result(false)
-
-func _on_assemble_pressed(card: OrderCard) -> void:
-	if not _tray_has_components(card.recipe.get("components", [])):
-		return
-	_assembly_view.open_for(card)
-
-func _on_assemble_cancel() -> void:
-	pass
+	_dismiss_customer_for(card)
 
 func _on_serve(card: OrderCard) -> void:
 	if card == null or not _active_orders.has(card):
@@ -666,14 +445,191 @@ func _on_serve(card: OrderCard) -> void:
 	GameManager.add_coins(coins)
 	MissionManager.track_coins_earned(coins)
 	_update_stats()
-	_consume_from_tray(card.recipe.get("components", []))
+	_assembly.clear()
+	_refresh_assembly_ui()
 	_active_orders.erase(card)
 	card.stop()
 	card.queue_free()
 	GameManager.record_order_result(true)
+	_dismiss_customer_for(card)
 
 func _on_burnt(_ingredient_id: String) -> void:
 	_stage_burnt = true
+
+func _on_order_card_input(card: OrderCard, event: InputEvent) -> void:
+	var tapped: bool = false
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		tapped = true
+	elif event is InputEventScreenTouch and event.pressed:
+		tapped = true
+	if not tapped:
+		return
+	if _assembly_matches_recipe(card.recipe):
+		_on_serve(card)
+
+func _on_ingredient_dropped(ing_id: String, state: String) -> void:
+	if _assembly_contains(ing_id, state):
+		return
+	if not _can_add_to_assembly(ing_id, state):
+		return
+	var key := "%s:%s" % [ing_id, state]
+	if int(_ready_tray.get(key, 0)) <= 0:
+		return
+	_ready_tray[key] = int(_ready_tray[key]) - 1
+	if int(_ready_tray[key]) == 0:
+		_ready_tray.erase(key)
+	_push_to_assembly({"ingredient": ing_id, "state": state})
+	if state == "prepped":
+		_refresh_prep_ui()
+		if _cutting_board != null and _cutting_board.has_method("try_collect"):
+			_cutting_board.try_collect()
+	else:
+		_refresh_cooked_ui()
+
+func _assembly_contains(ing_id: String, state: String) -> bool:
+	for comp in _assembly:
+		if str(comp.get("ingredient", "")) == ing_id and str(comp.get("state", "")) == state:
+			return true
+	return false
+
+func _can_add_to_assembly(ingredient_id: String, state: String) -> bool:
+	var candidate := {"ingredient": ingredient_id, "state": state}
+	var proposed: Array = _assembly.duplicate()
+	proposed.append(candidate)
+	var proposed_group: Dictionary = _group_components(proposed)
+	for recipe_id in DataLoader.recipes:
+		var recipe: Dictionary = DataLoader.recipes[recipe_id]
+		var recipe_group: Dictionary = _group_components(recipe.get("components", []))
+		var fits := true
+		for key in proposed_group.keys():
+			if int(proposed_group[key]) > int(recipe_group.get(key, 0)):
+				fits = false
+				break
+		if fits:
+			return true
+	return false
+
+func _push_to_assembly(comp: Dictionary) -> void:
+	_assembly.append(comp)
+	_refresh_assembly_ui()
+
+func _clear_assembly(_idx: int = -1) -> void:
+	_assembly.clear()
+	_refresh_assembly_ui()
+
+func _on_burnt_slot_trashed(slot) -> void:
+	if slot != null and is_instance_valid(slot) and slot.has_method("discard_burnt"):
+		slot.discard_burnt()
+
+func _on_board_chopped_trashed(board) -> void:
+	if board != null and is_instance_valid(board) and board.has_method("discard_chopped"):
+		board.discard_chopped()
+
+func _hide_slot_placeholders() -> void:
+	var slots: Array = []
+	slots.append_array(_crate_slots)
+	slots.append_array(_bowl_slots)
+	slots.append_array(_cooked_slots)
+	slots.append_array(_cook_raw_slots)
+	slots.append_array(_appliance_slots)
+	if _cutting_board_slot != null:
+		slots.append(_cutting_board_slot)
+	for slot in slots:
+		if slot == null:
+			continue
+		var p: Node = slot.get_node_or_null("Placeholder")
+		if p != null and p is CanvasItem:
+			(p as CanvasItem).visible = false
+
+func _assembly_matches_recipe(recipe: Dictionary) -> bool:
+	var required := _group_components(recipe.get("components", []))
+	var have := _group_components(_assembly)
+	if required.size() != have.size():
+		return false
+	for key in required.keys():
+		if int(have.get(key, 0)) != int(required[key]):
+			return false
+	return true
+
+func _refresh_assembly_ui() -> void:
+	if _assembly_rows == null:
+		return
+	_clear_children(_assembly_rows)
+	for i in _assembly.size():
+		var comp: Dictionary = _assembly[i]
+		var row := AssemblyRowScene.instantiate()
+		row.index = i
+		row.set_meta("comp", comp)
+		var ing := DataLoader.get_ingredient(str(comp.get("ingredient", "")))
+		var state: String = str(comp.get("state", "prepped"))
+		var text: String = ing.get("label", comp.get("ingredient", ""))
+		if state == "prepped":
+			text = ing.get("prepped_label", text)
+		elif state == "cooked":
+			text = ing.get("cooked_label", text)
+		_assembly_rows.add_child(row)
+		row.setup(text, DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))))
+
+func _spawn_customer_for(card: OrderCard) -> void:
+	if _customers_layer == null or _window_left == null or _window_right == null:
+		return
+	var customer := CustomerScene.instantiate()
+	_customers_layer.add_child(customer)
+	customer.setup()
+	var color := DataLoader.parse_color(str(card.recipe.get("color", "#FFC107")))
+	customer.show_order(_format_recipe_ingredients(card.recipe), color)
+	var target_x := _next_window_x()
+	_occupied_window_xs.append(target_x)
+	_customers_by_card[card] = customer
+	customer.tapped.connect(func(): _on_customer_tapped(card))
+	var start_x: float = _customers_layer.size.x + CUSTOMER_OFFSCREEN_MARGIN
+	customer.walk_in(start_x, target_x, _window_left.position.y)
+
+func _on_customer_tapped(card: OrderCard) -> void:
+	if not _active_orders.has(card):
+		return
+	if _assembly_matches_recipe(card.recipe):
+		_on_serve(card)
+	elif not _assembly.is_empty():
+		_on_wrong_order_served(card)
+
+func _on_wrong_order_served(card: OrderCard) -> void:
+	_stage_coins = max(0, _stage_coins - WRONG_ORDER_COIN_PENALTY)
+	GameManager.add_coins(-WRONG_ORDER_COIN_PENALTY)
+	_stage_angry = true
+	card.time_left = max(0.0, card.time_left - WRONG_ORDER_TIME_PENALTY)
+	_assembly.clear()
+	_refresh_assembly_ui()
+	_update_stats()
+
+func _dismiss_customer_for(card: OrderCard) -> void:
+	if not _customers_by_card.has(card):
+		return
+	var customer = _customers_by_card[card]
+	_customers_by_card.erase(card)
+	if customer == null or not is_instance_valid(customer):
+		return
+	var target_x: float = customer.position.x
+	_occupied_window_xs.erase(target_x)
+	customer.walk_off(-CUSTOMER_OFFSCREEN_MARGIN)
+
+func _format_recipe_ingredients(recipe: Dictionary) -> String:
+	var names: Array[String] = []
+	for comp in recipe.get("components", []):
+		var ing_id: String = comp.get("ingredient", "")
+		var ing: Dictionary = DataLoader.get_ingredient(ing_id)
+		names.append(str(ing.get("label", ing_id)))
+	return " + ".join(names)
+
+func _next_window_x() -> float:
+	var x_min: float = _window_left.position.x
+	var x_max: float = _window_right.position.x
+	var step: float = (x_max - x_min) / float(CUSTOMER_QUEUE_SLOTS - 1)
+	for i in CUSTOMER_QUEUE_SLOTS:
+		var x: float = x_min + step * float(i)
+		if not _occupied_window_xs.has(x):
+			return x
+	return x_min
 
 func _on_level_completed(summary: Dictionary) -> void:
 	_level_active = false
@@ -757,43 +713,3 @@ func _clear_active_ui() -> void:
 		c.queue_free()
 	_active_orders.clear()
 	_ready_tray.clear()
-
-# Swipe handling
-func _on_screen_input(event: InputEvent) -> void:
-	if _pages.size() <= 1:
-		return
-	if event is InputEventScreenTouch or event is InputEventMouseButton:
-		if event.pressed:
-			_dragging = true
-			_drag_start_x = event.position.x
-			_drag_start_offset = _pages_holder.position.x
-		else:
-			if not _dragging:
-				return
-			_dragging = false
-			var diff: float = event.position.x - _drag_start_x
-			var target := _current_page
-			if diff < -SWIPE_THRESHOLD and _current_page < _pages.size() - 1:
-				target = _current_page + 1
-			elif diff > SWIPE_THRESHOLD and _current_page > 0:
-				target = _current_page - 1
-			_animate_to_page(target)
-	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
-		if _dragging:
-			var diff: float = event.position.x - _drag_start_x
-			var new_x := _drag_start_offset + diff
-			var max_x: float = 0.0
-			var min_x: float = -(float(_pages.size() - 1) * _screen_area.size.x)
-			_pages_holder.position.x = clamp(new_x, min_x, max_x)
-
-func _goto_page(page_idx: int) -> void:
-	if page_idx < 0 or page_idx >= _pages.size():
-		return
-	_animate_to_page(page_idx)
-
-func _animate_to_page(page_idx: int) -> void:
-	_current_page = page_idx
-	var target_x := -page_idx * _screen_area.size.x
-	var tween := create_tween()
-	tween.tween_property(_pages_holder, "position:x", target_x, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_update_swipe_hints()

@@ -1,13 +1,13 @@
 {
   "grill": {
     "label": "Grill",
-    "slots": 2,
+    "slots": 1,
     "color": "#5D4037",
     "cleaning_time": 2.0
   },
   "stove": {
     "label": "Stove",
-    "slots": 2,
+    "slots": 1,
     "color": "#455A64",
     "cleaning_time": 2.0
   },
@@ -19,7 +19,7 @@
   },
   "toaster": {
     "label": "Toaster",
-    "slots": 2,
+    "slots": 1,
     "color": "#8D6E63",
     "cleaning_time": 2.0
   },
