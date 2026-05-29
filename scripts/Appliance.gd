@@ -7,6 +7,7 @@ signal item_burnt(ingredient_id: String)
 var appliance_id: String = ""
 var appliance_data: Dictionary = {}
 var _slots: Array[CookingSlot] = []
+var _collect_check: Callable
 var _cooking_slot_scene: PackedScene = preload("res://scenes/CookingSlot.tscn")
 
 var _title: Label
@@ -30,7 +31,14 @@ func setup(id: String, data: Dictionary) -> void:
 		_slots_box.add_child(slot)
 		slot.cooked.connect(_on_slot_cooked)
 		slot.burnt.connect(_on_slot_burnt)
+		if _collect_check.is_valid():
+			slot.can_collect_callable = _collect_check
 		_slots.append(slot)
+
+func set_collect_check(c: Callable) -> void:
+	_collect_check = c
+	for slot in _slots:
+		slot.can_collect_callable = c
 
 func try_place(id: String, ing: Dictionary) -> bool:
 	if ing.get("appliance", "") != appliance_id:

@@ -20,6 +20,7 @@ theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="Margin/VB" unique_id=1282586168]
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 text = "CUTTING BOARD"
 horizontal_alignment = 1
@@ -27,6 +28,7 @@ horizontal_alignment = 1
 [node name="Label" type="Label" parent="Margin/VB" unique_id=210057058]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
 text = "- empty -"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -36,16 +38,19 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
 color = Color(0.2, 0.2, 0.2, 0.6)
 
 [node name="Progress" type="ProgressBar" parent="Margin/VB" unique_id=1977230157]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
 show_percentage = false
 
 [node name="Status" type="Label" parent="Margin/VB" unique_id=516784716]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 12
 text = "Place an ingredient"
 horizontal_alignment = 1

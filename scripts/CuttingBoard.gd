@@ -4,13 +4,14 @@ class_name CuttingBoard
 signal chopped(ingredient_id: String)
 signal state_changed
 
-enum State { EMPTY, CHOPPING }
+enum State { EMPTY, CHOPPING, READY }
 
 var state: int = State.EMPTY
 var ingredient_id: String = ""
 var ingredient: Dictionary = {}
 var taps_remaining: int = 0
 var _total_taps: int = 3
+var can_collect_callable: Callable
 
 var _label: Label
 var _color_rect: ColorRect
@@ -49,10 +50,47 @@ func _on_gui_input(event: InputEvent) -> void:
 	_status.text = "Tap to chop (%d)" % max(taps_remaining, 0)
 	_pulse()
 	if taps_remaining <= 0:
-		var finished_id := ingredient_id
-		_clear()
-		emit_signal("chopped", finished_id)
+		_finish_chopping()
+
+func _finish_chopping() -> void:
+	if can_collect_callable.is_valid() and not can_collect_callable.call(ingredient_id):
+		state = State.READY
+		_render_ready()
 		emit_signal("state_changed")
+		return
+	var finished_id := ingredient_id
+	_clear()
+	emit_signal("chopped", finished_id)
+	emit_signal("state_changed")
+
+func try_collect() -> void:
+	if state != State.READY:
+		return
+	if can_collect_callable.is_valid() and not can_collect_callable.call(ingredient_id):
+		return
+	var finished_id := ingredient_id
+	_clear()
+	emit_signal("chopped", finished_id)
+	emit_signal("state_changed")
+
+func discard_chopped() -> void:
+	if state != State.READY:
+		return
+	_clear()
+	emit_signal("state_changed")
+
+func _get_drag_data(_at_position: Vector2):
+	if state != State.READY:
+		return null
+	var label := Label.new()
+	label.text = "%s ✓" % str(ingredient.get("prepped_label", ingredient.get("label", ingredient_id)))
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	var preview := PanelContainer.new()
+	preview.modulate = Color(1, 1, 1, 0.9)
+	preview.add_child(label)
+	set_drag_preview(preview)
+	return {"type": "board_chopped", "board": self}
 
 func _clear() -> void:
 	state = State.EMPTY
@@ -81,6 +119,14 @@ func _render_empty() -> void:
 	_progress.max_value = 1.0
 	_progress.value = 0.0
 	_status.text = "Place an ingredient"
+
+func _render_ready() -> void:
+	if _label == null:
+		return
+	_label.text = "%s ✓" % str(ingredient.get("prepped_label", ingredient.get("label", ingredient_id)))
+	_color_rect.color = DataLoader.parse_color(str(ingredient.get("color", "#CCCCCC"))).lightened(0.15)
+	_progress.value = float(_total_taps)
+	_status.text = "BOWL FULL - drag to trash"
 
 func _pulse() -> void:
 	var tween: Tween = create_tween()

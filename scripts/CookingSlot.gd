@@ -9,6 +9,7 @@ enum State { EMPTY, COOKING, DONE, BURNING, BURNT, CLEANING }
 var state: int = State.EMPTY
 var ingredient_id: String = ""
 var ingredient: Dictionary = {}
+var can_collect_callable: Callable
 var _cook_time: float = 0.0
 var _grace_time: float = 0.0
 var _burn_time: float = 0.0
@@ -127,6 +128,8 @@ func _on_gui_input(event: InputEvent) -> void:
 	if not tapped:
 		return
 	if state == State.DONE and not _collected:
+		if can_collect_callable.is_valid() and not can_collect_callable.call(ingredient_id):
+			return
 		_collected = true
 		emit_signal("cooked", ingredient_id)
 		state = State.EMPTY

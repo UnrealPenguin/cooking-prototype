@@ -101,6 +101,8 @@ func _ready() -> void:
 		_trash_can.item_trashed.connect(_clear_assembly)
 	if _trash_can != null and _trash_can.has_signal("burnt_slot_trashed"):
 		_trash_can.burnt_slot_trashed.connect(_on_burnt_slot_trashed)
+	if _trash_can != null and _trash_can.has_signal("board_chopped_trashed"):
+		_trash_can.board_chopped_trashed.connect(_on_board_chopped_trashed)
 	if _assembly_panel != null and _assembly_panel.has_signal("ingredient_dropped"):
 		_assembly_panel.ingredient_dropped.connect(_on_ingredient_dropped)
 	_pause_settings_btn.pressed.connect(func(): _settings_sub_panel.visible = true)
@@ -230,6 +232,7 @@ func _build_cook_section(lvl: Dictionary) -> void:
 		_appliance_slots[i].add_child(app)
 		app.set_anchors_preset(Control.PRESET_FULL_RECT)
 		app.setup(app_id, app_data)
+		app.set_collect_check(_can_accept_cooked)
 		app.item_cooked.connect(_on_cooked)
 		app.item_burnt.connect(_on_burnt)
 		_appliances_ui.append(app)
@@ -292,11 +295,10 @@ func _build_prep_section(lvl: Dictionary) -> void:
 	_cutting_board_slot.add_child(_cutting_board)
 	_cutting_board.chopped.connect(_on_chopped)
 	_cutting_board.state_changed.connect(_refresh_prep_ui)
+	_cutting_board.can_collect_callable = _can_accept_prepped
 
 func _on_raw_pressed(ing_id: String) -> void:
 	if _cutting_board == null or not _cutting_board.is_empty():
-		return
-	if _container_count(ing_id) >= CONTAINER_CAPACITY:
 		return
 	var ing := DataLoader.get_ingredient(ing_id)
 	if ing.is_empty() or not bool(ing.get("needs_prep", false)):
@@ -312,14 +314,22 @@ func _on_cooked(ingredient_id: String) -> void:
 func _container_count(ing_id: String) -> int:
 	return int(_ready_tray.get("%s:prepped" % ing_id, 0))
 
+func _cooked_count(ing_id: String) -> int:
+	return int(_ready_tray.get("%s:cooked" % ing_id, 0))
+
+func _can_accept_cooked(ing_id: String) -> bool:
+	return _cooked_count(ing_id) < CONTAINER_CAPACITY
+
+func _can_accept_prepped(ing_id: String) -> bool:
+	return _container_count(ing_id) < CONTAINER_CAPACITY
+
 func _refresh_prep_ui() -> void:
 	if _cutting_board == null:
 		return
 	var board_busy: bool = not _cutting_board.is_empty()
 	for id in _raw_buttons.keys():
 		var btn: Button = _raw_buttons[id]
-		var full := _container_count(id) >= CONTAINER_CAPACITY
-		btn.disabled = board_busy or full
+		btn.disabled = board_busy
 	for id in _ready_bowls.keys():
 		var bowl = _ready_bowls[id]
 		bowl.set_count(_container_count(id))
@@ -341,6 +351,8 @@ func _consume_from_tray(components: Array) -> void:
 			_ready_tray.erase(key)
 	_refresh_cooked_ui()
 	_refresh_prep_ui()
+	if _cutting_board != null and _cutting_board.has_method("try_collect"):
+		_cutting_board.try_collect()
 
 func _refresh_cooked_ui() -> void:
 	for id in _cooked_items.keys():
@@ -469,6 +481,8 @@ func _on_ingredient_dropped(ing_id: String, state: String) -> void:
 	_push_to_assembly({"ingredient": ing_id, "state": state})
 	if state == "prepped":
 		_refresh_prep_ui()
+		if _cutting_board != null and _cutting_board.has_method("try_collect"):
+			_cutting_board.try_collect()
 	else:
 		_refresh_cooked_ui()
 
@@ -506,6 +520,10 @@ func _clear_assembly(_idx: int = -1) -> void:
 func _on_burnt_slot_trashed(slot) -> void:
 	if slot != null and is_instance_valid(slot) and slot.has_method("discard_burnt"):
 		slot.discard_burnt()
+
+func _on_board_chopped_trashed(board) -> void:
+	if board != null and is_instance_valid(board) and board.has_method("discard_chopped"):
+		board.discard_chopped()
 
 func _hide_slot_placeholders() -> void:
 	var slots: Array = []
