@@ -1,0 +1,26 @@
+{
+  "cat": {
+    "label": "Cat",
+    "frequency": 1,
+    "sprites": ["cat.png"],
+    "recipes": ["classic_burger", "basic_burger"]
+  },
+  "corgi": {
+    "label": "Corgi",
+    "frequency": 1,
+    "sprites": ["corgi.png"],
+    "recipes": ["classic_burger", "steak_plate"]
+  },
+  "fox": {
+    "label": "Fox",
+    "frequency": 1,
+    "sprites": ["fox.png"],
+    "recipes": ["steak_plate", "stir_fry"]
+  },
+  "raccoon": {
+    "label": "Raccoon",
+    "frequency": 1,
+    "sprites": ["raccoon.png"],
+    "recipes": ["classic_burger", "stir_fry"]
+  }
+}

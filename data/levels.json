@@ -19,7 +19,7 @@
     "screen_mode": "single",
     "prep_ingredients": ["lettuce", "tomato"],
     "appliances": ["grill", "toaster"],
-    "recipes": ["classic_burger"],
+    "recipes": ["classic_burger", "steak_plate"],
     "max_simultaneous_orders": 2,
     "total_orders": 5,
     "spawn_interval": 5.0,

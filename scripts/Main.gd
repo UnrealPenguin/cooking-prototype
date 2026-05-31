@@ -74,6 +74,7 @@ var _cooked_items: Dictionary = {}  # ingredient_id -> CookedItem
 var _assembly: Array[Dictionary] = []  # [{ingredient, state}, ...]
 var _customers_by_card: Dictionary = {}  # OrderCard -> Customer
 var _occupied_window_xs: Array[float] = []
+var _last_sprite_by_animal: Dictionary = {}  # animal_id -> last sprite filename
 const MAX_PREP_SLOTS := 5
 
 var _spawn_timer: float = 0.0
@@ -415,6 +416,10 @@ func _spawn_order() -> void:
 	var recipe := DataLoader.get_recipe(recipe_id)
 	if recipe.is_empty():
 		return
+	var sprite_path: String = _pick_customer_sprite_for_recipe(recipe_id)
+	if sprite_path == "":
+		push_warning("No customer can order recipe '%s' — check data/customers.json. Order skipped." % recipe_id)
+		return
 	var card := OrderCardScene.instantiate() as OrderCard
 	_order_strip.add_child(card)
 	card.setup(recipe_id, recipe)
@@ -423,7 +428,51 @@ func _spawn_order() -> void:
 	card.gui_input.connect(func(event): _on_order_card_input(card, event))
 	_active_orders.append(card)
 	_orders_spawned += 1
-	_spawn_customer_for(card)
+	_spawn_customer_for(card, sprite_path)
+
+func _pick_customer_sprite_for_recipe(recipe_id: String) -> String:
+	var candidates: Array = []
+	var weights: Array[int] = []
+	var candidate_ids: Array[String] = []
+	for animal_id in DataLoader.customers:
+		var animal: Dictionary = DataLoader.customers[animal_id]
+		var ok_recipes: Array = animal.get("recipes", [])
+		if not (recipe_id in ok_recipes):
+			continue
+		var sprites: Array = animal.get("sprites", [])
+		if sprites.is_empty():
+			continue
+		var w: int = max(1, int(animal.get("frequency", 1)))
+		candidates.append(animal)
+		weights.append(w)
+		candidate_ids.append(animal_id)
+	if candidates.is_empty():
+		return ""
+	var total: int = 0
+	for w in weights:
+		total += w
+	var roll: int = randi() % total
+	var picked: Dictionary = candidates[0]
+	var picked_id: String = candidate_ids[0]
+	for i in candidates.size():
+		roll -= weights[i]
+		if roll < 0:
+			picked = candidates[i]
+			picked_id = candidate_ids[i]
+			break
+	var sprites: Array = picked.get("sprites", [])
+	var last_sprite: String = str(_last_sprite_by_animal.get(picked_id, ""))
+	var pool: Array = sprites
+	if sprites.size() > 1 and last_sprite != "":
+		pool = []
+		for s in sprites:
+			if str(s) != last_sprite:
+				pool.append(s)
+		if pool.is_empty():
+			pool = sprites
+	var filename: String = str(pool[randi() % pool.size()])
+	_last_sprite_by_animal[picked_id] = filename
+	return "res://assets/customers/%s" % filename
 
 func _on_order_expired(card: OrderCard) -> void:
 	if not _active_orders.has(card):
@@ -570,12 +619,12 @@ func _refresh_assembly_ui() -> void:
 		_assembly_rows.add_child(row)
 		row.setup(text, DataLoader.parse_color(str(ing.get("color", "#CCCCCC"))))
 
-func _spawn_customer_for(card: OrderCard) -> void:
+func _spawn_customer_for(card: OrderCard, sprite_path: String = "") -> void:
 	if _customers_layer == null or _window_left == null or _window_right == null:
 		return
 	var customer := CustomerScene.instantiate()
 	_customers_layer.add_child(customer)
-	customer.setup()
+	customer.setup(sprite_path)
 	var color := DataLoader.parse_color(str(card.recipe.get("color", "#FFC107")))
 	customer.show_order(_format_recipe_ingredients(card.recipe), color)
 	var target_x := _next_window_x()

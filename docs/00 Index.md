@@ -9,6 +9,7 @@ The game is data-driven. Most gameplay tweaks happen by editing JSON in [data/](
 - [[Recipes schema]] — orders the player must fulfill (`data/recipes.json`)
 - [[Ingredients schema]] — every ingredient and its prep/cook config (`data/ingredients.json`)
 - [[Appliances schema]] — cooking stations (`data/appliances.json`)
+- [[Customers schema]] — animal types, sprite variations, recipe affinities, frequency (`data/customers.json`)
 - [[Levels schema]] — shifts / progression (`data/levels.json`)
 
 ## Conventions
@@ -23,4 +24,5 @@ The game is data-driven. Most gameplay tweaks happen by editing JSON in [data/](
 - [[Recipes schema#Add a new recipe]]
 - [[Ingredients schema#Add a new ingredient]]
 - [[Appliances schema#Add a new appliance]]
+- [[Customers schema#Add a new customer]] · [[Customers schema#Add a new sprite variation to an existing animal]]
 - [[Levels schema#Add a new level]]

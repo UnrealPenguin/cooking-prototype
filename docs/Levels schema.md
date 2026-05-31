@@ -48,7 +48,7 @@ A JSON **array** (not object) — order in the array is the play order. Each ent
 |---|---|---|---|
 | `prep_ingredients` | string[] | yes | Ingredient IDs (see [[Ingredients schema]]) shown in the prep crates. Capped at `MAX_PREP_SLOTS = 5` in code |
 | `appliances` | string[] | yes | Appliance IDs (see [[Appliances schema]]). Capped at 4 (`ApplianceSlot1..4`). Order = visual order in the cook area |
-| `recipes` | string[] | yes | Recipe IDs (see [[Recipes schema]]) that can spawn this level. Each new order picks uniformly at random |
+| `recipes` | string[] | yes | Recipe IDs (see [[Recipes schema]]) that can spawn this level. Each new order picks uniformly at random. Each recipe must be listed by at least one animal in [[Customers schema]] or the order will be skipped at runtime |
 
 ### Timing & difficulty
 

@@ -70,5 +70,9 @@ Example — salad bowl that reuses existing prep ingredients:
 
 - `DataLoader.recipes` is a Dictionary populated at game start from this file.
 - `DataLoader.get_recipe(id)` returns the dict or `{}` if missing.
-- `Main.gd:_spawn_order` randomly picks from a level's `recipes` array.
+- `Main.gd:_spawn_order` randomly picks from a level's `recipes` array, then asks the [[Customers schema|customer picker]] for a matching animal.
 - `Main.gd:_assembly_matches_recipe(recipe)` does the multiset check on serve.
+
+## Customer affinity
+
+For a recipe to actually spawn in-game, at least one animal in [[Customers schema]] must list it under their `recipes`. Otherwise `_spawn_order` skips the spawn and emits a warning. When adding a new recipe, also add it to the relevant animals' `recipes` arrays.

@@ -3,12 +3,14 @@ extends Node
 var ingredients: Dictionary = {}
 var appliances: Dictionary = {}
 var recipes: Dictionary = {}
+var customers: Dictionary = {}
 var levels: Array = []
 
 func _ready() -> void:
 	ingredients = _load_json("res://data/ingredients.json")
 	appliances = _load_json("res://data/appliances.json")
 	recipes = _load_json("res://data/recipes.json")
+	customers = _load_json("res://data/customers.json")
 	levels = _load_json("res://data/levels.json")
 
 func _load_json(path: String) -> Variant:
@@ -32,6 +34,9 @@ func get_appliance(id: String) -> Dictionary:
 
 func get_recipe(id: String) -> Dictionary:
 	return recipes.get(id, {})
+
+func get_customer(id: String) -> Dictionary:
+	return customers.get(id, {})
 
 func get_level(id: int) -> Dictionary:
 	for lvl in levels:
