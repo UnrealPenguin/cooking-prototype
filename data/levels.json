@@ -5,7 +5,7 @@
     "screen_mode": "single",
     "prep_ingredients": ["lettuce", "tomato"],
     "appliances": ["grill", "toaster"],
-    "recipes": ["classic_burger"],
+    "recipes": ["classic_burger", "basic_burger"],
     "max_simultaneous_orders": 1,
     "total_orders": 3,
     "spawn_interval": 6.0,
@@ -60,7 +60,13 @@
     "id": 5,
     "name": "Shift 5 - Busy",
     "screen_mode": "dual",
-    "prep_ingredients": ["lettuce", "tomato", "scallion", "onion_stir", "onion_sauteed"],
+    "prep_ingredients": [
+      "lettuce",
+      "tomato",
+      "scallion",
+      "onion_raw",
+      "onion_sauteed"
+    ],
     "appliances": ["grill", "toaster", "stove", "wok"],
     "recipes": ["classic_burger", "steak_plate", "stir_fry"],
     "max_simultaneous_orders": 3,

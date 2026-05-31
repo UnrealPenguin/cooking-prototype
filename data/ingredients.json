@@ -37,7 +37,7 @@
     "prepped_label": "Sliced Peppers",
     "needs_cook": false
   },
-  "onion_stir": {
+  "onion_raw": {
     "label": "Onion",
     "color": "#FFE0B2",
     "icon": "onions",
