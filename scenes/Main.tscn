@@ -519,9 +519,9 @@ unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 0
 offset_left = 938.0
-offset_top = 478.0
+offset_top = 477.0
 offset_right = 1064.0
-offset_bottom = 658.0
+offset_bottom = 657.0
 
 [node name="Placeholder" type="ColorRect" parent="Stage/CookLayer/ApplianceSlot4" unique_id=2007426575]
 layout_mode = 1

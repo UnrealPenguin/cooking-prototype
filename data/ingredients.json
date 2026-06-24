@@ -54,9 +54,7 @@
     "needs_cook": true,
     "appliance": "grill",
     "cook_time": 6.0,
-    "done_grace": 3.0,
-    "burn_time": 3.0,
-    "cooked_label": "Grilled Patty"
+    "done_grace": 3.0,    "cooked_label": "Grilled Patty"
   },
   "bun": {
     "label": "Bun",
@@ -65,9 +63,7 @@
     "needs_cook": true,
     "appliance": "toaster",
     "cook_time": 4.0,
-    "done_grace": 3.0,
-    "burn_time": 3.0,
-    "cooked_label": "Toasted Bun"
+    "done_grace": 3.0,    "cooked_label": "Toasted Bun"
   },
   "steak": {
     "label": "Steak",
@@ -76,9 +72,7 @@
     "needs_cook": true,
     "appliance": "grill",
     "cook_time": 8.0,
-    "done_grace": 3.0,
-    "burn_time": 3.0,
-    "cooked_label": "Grilled Steak"
+    "done_grace": 3.0,    "cooked_label": "Grilled Steak"
   },
   "onion_sauteed": {
     "label": "Onion",
@@ -91,9 +85,7 @@
     "needs_cook": true,
     "appliance": "stove",
     "cook_time": 5.0,
-    "done_grace": 3.0,
-    "burn_time": 3.0,
-    "cooked_label": "Sauteed Onion"
+    "done_grace": 3.0,    "cooked_label": "Sauteed Onion"
   },
   "chicken_wok": {
     "label": "Chicken",
@@ -102,8 +94,6 @@
     "needs_cook": true,
     "appliance": "wok",
     "cook_time": 6.0,
-    "done_grace": 3.0,
-    "burn_time": 3.0,
-    "cooked_label": "Wok Chicken"
+    "done_grace": 3.0,    "cooked_label": "Wok Chicken"
   }
 }
