@@ -21,9 +21,9 @@ A flat object keyed by `ingredient_id`. Each entry defines whether the ingredien
     "appliance": "appliance_id",
     "cook_time": 6.0,
     "done_grace": 3.0,
-    "burn_time": 3.0,
     "cooked_label": "Cooked Name",
-    "cooked_icon": "icon_name"
+    "cooked_icon": "icon_name",
+    "burnt_icon": "icon_name"
   }
 }
 ```
@@ -55,10 +55,40 @@ A flat object keyed by `ingredient_id`. Each entry defines whether the ingredien
 | `needs_cook` | bool | yes | If false, this ingredient stops at "prepped" |
 | `appliance` | string | yes | Must match an appliance_id in [[Appliances schema]]. The raw button only goes to that appliance |
 | `cook_time` | float | yes | Seconds in COOKING state before reaching DONE |
-| `done_grace` | float | yes | Seconds in DONE state before BURNING starts. Players have this window to collect |
-| `burn_time` | float | yes | Seconds in BURNING before BURNT state. After BURNT, must drag to trash |
+| `done_grace` | float | yes | Seconds the item is READY/collectable before it burns. The cooked sprite gradually chars over this window as a warning, then flips to BURNT. Players have this window to collect |
 | `cooked_label` | string | recommended | Display name after cook. Shown in OrderBubble and assembly rows |
 | `cooked_icon` | string | optional | Filename suffix for the cooked sprite. Used by CookedItem when count > 0 |
+| `burnt_icon` | string | optional | Filename suffix for the **required** burnt sprite (see [[#Cook states & burnt sprite]]). Defaults to `icon` then `ingredient_id` |
+
+## Cook states & burnt sprite
+
+Cooking runs through a simple state machine in [CookingSlot.gd](../scripts/CookingSlot.gd):
+
+```
+COOKING ──(cook_time)──▶ DONE ──(done_grace)──▶ BURNT ──(drag to trash)──▶ CLEANING ──▶ EMPTY
+   │                       │                       │
+ raw sprite          cooked sprite,           burnt sprite +
+                     chars as warning          rising smoke
+```
+
+There is **no separate "burning" phase** — if the player doesn't collect the item during the `done_grace` window, it burns directly. (The old `burn_time` field is gone; remove it if you see it in old data.)
+
+### Burnt sprite is mandatory
+
+Every `needs_cook: true` ingredient **must** ship a burnt sprite:
+
+```
+assets/ingredients/{burnt_icon | icon | ingredient_id}_burnt.png
+```
+
+If it's missing, the game asserts (hard error) the moment the item is placed — this keeps the burnt look hand-drawn and consistent rather than relying on a procedural filter. Don't forget to let Godot import the PNG after adding it.
+
+### Visual feedback (code-tunable, not data)
+
+These are tuned in [CookingSlot.gd](../scripts/CookingSlot.gd), not in JSON:
+
+- **Char warning** — during DONE, a darken/desaturate shader ([burn_darken.gdshader](../assets/shaders/burn_darken.gdshader)) ramps `0 → READY_BURN_MAX` across `done_grace`, so the cooked sprite visibly chars as it approaches burning.
+- **Smoke** — once BURNT, a `CPUParticles2D` puff rises off the item. Built in `_setup_smoke()`; it's optional and silently skipped if `assets/effects/smoke.png` is absent. Tune density/size/colour there (`amount`, `lifetime`, `scale_amount_*`, the `color_ramp` gradient — first color = darkest, fresh soot).
 
 ## State variants
 
@@ -76,9 +106,10 @@ Sprite paths are computed at runtime:
 - **Raw** (RawIngredientButton): `assets/ingredients/{icon | ingredient_id}.png`
 - **Prepped** (ReadyBowl, full state): tries `{chopped_icon | icon | ingredient_id}_chopped.png` then `{...}_prepped.png`
 - **Cooked** (CookedItem, full state): tries `{cooked_icon | icon | ingredient_id}_cooked.png` then `{...}_toasted.png` then `{...}.png`
+- **Burnt** (CookingSlot, BURNT state): `{burnt_icon | icon | ingredient_id}_burnt.png` — **required** for cookable items (see [[#Cook states & burnt sprite]])
 - **Empty bowl / cooked slot** falls back to `assets/bowls/empty_bowl.png`
 
-Missing assets render as the empty placeholder — no error.
+Missing assets render as the empty placeholder — no error. **Exception:** a cookable ingredient with no burnt sprite is a hard error, not a silent fallback.
 
 ## Add a new ingredient
 
@@ -88,7 +119,7 @@ Missing assets render as the empty placeholder — no error.
    - **Prep only** (vegetables) → `needs_prep: true`, `needs_cook: false`. Chop → ReadyBowl → assembly.
    - **Cook only** (patty, bun) → `needs_prep: false`, `needs_cook: true`, set `appliance` + cook timings.
    - **Prep + cook** (sauteed onion) → both true, set all timings.
-3. Add the matching sprites under `assets/ingredients/` (optional but recommended).
+3. Add the matching sprites under `assets/ingredients/` (optional but recommended) — **except** a `_burnt.png` is **required** for any `needs_cook: true` ingredient (see [[#Cook states & burnt sprite]]).
 4. Add the ingredient ID to a level's `prep_ingredients` (if prep-only or prep+cook) — otherwise it won't appear in that level.
 5. Reference it from a recipe in [[Recipes schema]].
 
@@ -103,10 +134,11 @@ Example — bacon strip (cook only, on a new "fryer" appliance):
   "appliance": "fryer",
   "cook_time": 5.0,
   "done_grace": 2.5,
-  "burn_time": 3.0,
   "cooked_label": "Crispy Bacon"
 }
 ```
+
+Then add the required burnt sprite `assets/ingredients/bacon_burnt.png` (and `bacon_raw.png` / `bacon_cooked.png` if you have them), and let Godot import them.
 
 ## Capacity rules
 

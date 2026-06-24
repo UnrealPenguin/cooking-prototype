@@ -56,15 +56,16 @@ Example — fryer for bacon / fries:
 
 Each slot transitions through:
 
-`EMPTY → COOKING → DONE → BURNING → BURNT → CLEANING → EMPTY`
+`EMPTY → COOKING → DONE → BURNT → CLEANING → EMPTY`
 
 - **EMPTY** — accepts a raw drop.
 - **COOKING** — counts up to `cook_time` (from the ingredient).
-- **DONE** — ready to collect for `done_grace` seconds. Tap to add to the cooked tray (blocked if tray full).
-- **BURNING** — `burn_time` seconds before BURNT. Still collectable.
-- **BURNT** — can't collect. Drag to trash to start CLEANING.
+- **DONE** — ready to collect for `done_grace` seconds. Tap to add to the cooked tray (blocked if tray full). The cooked sprite gradually chars as a warning over this window.
+- **BURNT** — reached directly when `done_grace` runs out (no separate burning phase). Shows the required `_burnt.png` sprite + rising smoke. Can't collect; drag to trash to start CLEANING.
 - **CLEANING** — `cleaning_time` (from the appliance). Then back to EMPTY.
+
+See [[Ingredients schema#Cook states & burnt sprite]] for the sprite/visual details.
 
 ## Capacity quirk
 
-If the cooked tray for that ingredient is at 3 when the slot reaches `DONE`, tap-to-collect is blocked. The slot keeps counting toward BURNING — you have until the burn timer runs out to free a cooked slot in the bowl (drag to assembly, or place on another appliance) and then tap to collect. See [[Ingredients schema#Capacity rules]].
+If the cooked tray for that ingredient is at 3 when the slot reaches `DONE`, tap-to-collect is blocked. The slot keeps counting through the `done_grace` window — you have until it burns to free a cooked slot in the bowl (drag to assembly, or place on another appliance) and then tap to collect. See [[Ingredients schema#Capacity rules]].

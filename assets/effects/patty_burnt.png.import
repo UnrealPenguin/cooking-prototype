@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c1oe71vwd7n0v"
-path="res://.godot/imported/bun_burnt.png-d9e2cfaf684dcae70149e72f4373b3c1.ctex"
+uid="uid://bbas4ijsfqnl0"
+path="res://.godot/imported/patty_burnt.png-d1f34f65b398cb74bc7057bc590970d7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ingredients/bun_burnt.png"
-dest_files=["res://.godot/imported/bun_burnt.png-d9e2cfaf684dcae70149e72f4373b3c1.ctex"]
+source_file="res://assets/effects/patty_burnt.png"
+dest_files=["res://.godot/imported/patty_burnt.png-d1f34f65b398cb74bc7057bc590970d7.ctex"]
 
 [params]
 
